@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>تعديات الخاصة بمقاولي مشاريع شركة المياه الوطنية | Apple iOS Experience</title>
+
+  <!-- Google Fonts: Cairo -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+
+  <!-- Leaflet & MarkerCluster CSS -->
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="vendor/MarkerCluster.css">
+  <link rel="stylesheet" href="vendor/MarkerCluster.Default.css">
+
+  <!-- iOS Human Interface Guidelines Theme -->
+  <link rel="stylesheet" href="css/ios-theme.css">
+</head>
+<body>
+
+  <!-- iOS Navigation Bar -->
+  <header class="ios-navbar">
+    <div class="ios-brand">
+      <div class="ios-brand-icon">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"></polygon>
+          <line x1="8" y1="2" x2="8" y2="18"></line>
+          <line x1="16" y1="6" x2="16" y2="22"></line>
+        </svg>
+      </div>
+      <div>
+        <h1 class="ios-brand-title">تعديات الخاصة بمقاولي مشاريع شركة المياه الوطنية</h1>
+        <p class="ios-brand-subtitle">نطاقات عقود المشاريع • استثناء م. عبدالله الأسود • واجهات Apple HIG</p>
+      </div>
+    </div>
+
+    <div class="ios-header-actions">
+      <!-- Permanent KMZ Status Indicator -->
+      <div class="ios-status-pill" id="kmzStatusPill" title="تم تثبيت نطاقات المشاريع المعتمدة بشكل دائم">
+        <span class="ios-status-dot"></span>
+        <span id="kmzStatusText">تم تثبيت 43 نطاق مشاريع نشط (KMZ)</span>
+      </div>
+
+      <label class="ios-btn ios-btn-secondary ios-btn-sm" style="cursor: pointer;" title="رفع ملف KMZ/KML جديد وتحديث النطاقات">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+        <span>تحديث KMZ</span>
+        <input type="file" id="kmzFileInput" accept=".kmz,.kml" style="display: none;">
+      </label>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container with Sidebar Layout -->
+  <main class="ios-container">
+
+    <div class="ios-dashboard-layout">
+
+      <!-- 1. INTERACTIVE SIDEBAR: PROGRAM MANAGERS (NWC) -->
+      <aside class="ios-glass ios-sidebar-card">
+        <div class="ios-sidebar-header">
+          <span class="ios-sidebar-title">مديرو البرامج (NWC)</span>
+          <span class="ios-kpi-badge badge-blue">10 مديرين</span>
+        </div>
+
+        <!-- Search Manager in Sidebar -->
+        <input type="text" id="sidebarManagerSearch" class="ios-search-input" 
+               placeholder="ابحث عن مدير برنامج..." style="padding: 8px 12px; font-size: 0.82rem;">
+
+        <!-- Manager Items Injected by sidebar-manager.js -->
+        <div id="programManagersSidebar" style="display: flex; flex-direction: column; gap: 8px;">
+          <!-- Loaded via JavaScript -->
+        </div>
+      </aside>
+
+      <!-- 2. MAIN WORKSPACE: KPI CARDS, MAP, AND TABLE -->
+      <div style="display: flex; flex-direction: column; gap: 20px; min-width: 0;">
+
+        <!-- Active Scope Banner -->
+        <div class="ios-glass ios-status-banner">
+          <div>
+            <div style="font-size: 1.15rem; font-weight: 800; color: var(--ios-text-primary);" id="kpiScopeTitle">
+              🏢 كافة مقاولي مشاريع شركة المياه الوطنية
+            </div>
+            <div style="font-size: 0.84rem; color: var(--ios-text-secondary); margin-top: 2px;" id="kpiScopeDesc">
+              حصر بلاغات مقاولي المشاريع داخل نطاقات KMZ + كامل عقود م. عبدالله الأسود العنزي
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <button id="quickLoadBtn" class="ios-btn ios-btn-secondary ios-btn-sm" title="إعادة قراءة بيانات التعديات الأصلية">
+              🔄 إعادة فحص 3,824 بلاغ
+            </button>
+          </div>
+        </div>
+
+        <!-- Excel Dropzone & Quick Upload -->
+        <section class="ios-glass" style="padding: 20px;">
+          <div class="ios-dropzone" id="excelDropzone">
+            <input type="file" id="excelFileInput" accept=".xlsx,.xls,.csv">
+            <div class="ios-drop-icon">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+                <polyline points="14 2 14 8 20 8"></polyline>
+                <line x1="12" y1="18" x2="12" y2="12"></line>
+                <line x1="9" y1="15" x2="15" y2="15"></line>
+              </svg>
+            </div>
+            <div class="ios-drop-title">اسحب وأفلت ملف إكسل البلاغات (.xlsx) هنا لفرز المقاولين لحظياً</div>
+            <div class="ios-drop-subtitle">فرز تلقائي صارم للمشاريع واستثناء مقاولي م. عبدالله الأسود العنزي في كافة الرياض</div>
+          </div>
+        </section>
+
+        <!-- DUAL KPI METRIC CARDS -->
+        <section class="ios-kpi-grid">
+          <!-- Total Assigned to Current Scope -->
+          <div class="ios-glass ios-kpi-card ios-kpi-total">
+            <div class="ios-kpi-header">
+              <span class="ios-kpi-title">إجمالي البلاغات المسندة</span>
+              <div class="ios-kpi-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                  <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ios-kpi-value" id="kpiTotalVal">0</div>
+            <div class="ios-kpi-footer">
+              <span id="kpiTotalSub">مقاولو المشاريع المعتمدون</span>
+              <span class="ios-kpi-badge badge-blue">مشاريع NWC</span>
+            </div>
+          </div>
+
+          <!-- Water Sector -->
+          <div class="ios-glass ios-kpi-card ios-kpi-water">
+            <div class="ios-kpi-header">
+              <span class="ios-kpi-title">💧 بلاغات قطاع المياه</span>
+              <div class="ios-kpi-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ios-kpi-value" id="kpiWaterTotalVal" style="color: var(--ios-teal);">0</div>
+            <div class="ios-kpi-dual-breakdown">
+              <span style="color: var(--ios-blue);" id="kpiWaterProjSub">مشاريع: 0</span>
+              <span style="color: var(--ios-orange);" id="kpiWaterMaintSub">صيانة: 0</span>
+            </div>
+            <div class="ios-kpi-footer">
+              <span>شبكات وتوصيلات المياه</span>
+              <span class="ios-kpi-badge badge-teal">المياه</span>
+            </div>
+          </div>
+
+          <!-- Sewer Sector -->
+          <div class="ios-glass ios-kpi-card ios-kpi-sewer">
+            <div class="ios-kpi-header">
+              <span class="ios-kpi-title">🚰 بلاغات قطاع الصرف الصحي</span>
+              <div class="ios-kpi-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M2 12h20"></path>
+                  <path d="M20 12v6a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-6"></path>
+                  <path d="M12 2v10"></path>
+                </svg>
+              </div>
+            </div>
+            <div class="ios-kpi-value" id="kpiSewerTotalVal" style="color: var(--ios-purple);">0</div>
+            <div class="ios-kpi-dual-breakdown">
+              <span style="color: var(--ios-indigo);" id="kpiSewerProjSub">مشاريع: 0</span>
+              <span style="color: var(--ios-orange);" id="kpiSewerMaintSub">صيانة: 0</span>
+            </div>
+            <div class="ios-kpi-footer">
+              <span>خطوط انحدار ومناهل الصرف</span>
+              <span class="ios-kpi-badge badge-purple">الصرف الصحي</span>
+            </div>
+          </div>
+
+          <!-- Resolution Rate -->
+          <div class="ios-glass ios-kpi-card ios-kpi-resolved">
+            <div class="ios-kpi-header">
+              <span class="ios-kpi-title">نسبة إنجاز المعالجة</span>
+              <div class="ios-kpi-icon-wrap">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                  <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                </svg>
+              </div>
+            </div>
+            <div class="ios-kpi-value" id="kpiRateVal">0%</div>
+            <div class="ios-kpi-footer">
+              <span id="kpiResolvedSub">0 بلاغ منجز</span>
+              <span class="ios-kpi-badge badge-green">تمت المعالجة</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- INTERACTIVE DASHBOARD CHARTS (Apple iOS UI/UX) -->
+        <section class="ios-glass ios-charts-section" id="chartsSection">
+          <div class="ios-charts-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div class="ios-chart-badge-icon">📊</div>
+              <div>
+                <h2 class="ios-chart-title" id="chartsSectionTitle">لوحة التحليلات البيانية التفاعلية</h2>
+                <p class="ios-chart-subtitle" id="chartsSectionSubtitle">مؤشرات الأداء وتوزيع البلاغات حسب المشاريع والحالات</p>
+              </div>
+            </div>
+            <div class="ios-chart-actions">
+              <span class="ios-kpi-badge badge-indigo" id="chartsActiveManagerBadge">كافة مقاولي المشاريع</span>
+            </div>
+          </div>
+
+          <div class="ios-charts-grid">
+            <!-- Chart 1: Bar Chart (Projects distribution) -->
+            <div class="ios-chart-card">
+              <div class="ios-chart-card-header">
+                <span class="ios-chart-card-title">توزيع البلاغات حسب المشاريع (مفتوحة / منجزة)</span>
+              </div>
+              <div class="ios-chart-wrapper">
+                <canvas id="chartProjectsBar"></canvas>
+              </div>
+            </div>
+
+            <!-- Chart 2: Donut Chart (Status breakdown) -->
+            <div class="ios-chart-card ios-chart-card-sm">
+              <div class="ios-chart-card-header">
+                <span class="ios-chart-card-title">نسب حالات البلاغات</span>
+              </div>
+              <div class="ios-chart-wrapper" style="position: relative;">
+                <canvas id="chartStatusDonut"></canvas>
+                <div class="ios-donut-center">
+                  <span class="ios-donut-count" id="donutCenterCount">0</span>
+                  <span class="ios-donut-label">إجمالي البلاغات</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Chart 3: Scope / District Comparison Chart -->
+            <div class="ios-chart-card">
+              <div class="ios-chart-card-header">
+                <span class="ios-chart-card-title">مقارنة حجم البلاغات حسب النطاق الجغرافي</span>
+              </div>
+              <div class="ios-chart-wrapper">
+                <canvas id="chartSectorComparison"></canvas>
+              </div>
+            </div>
+          </div>
+        </section>
+
+
+        <!-- DUAL FILTER & VIEW SWITCHER BAR -->
+        <section class="ios-glass ios-segmented-wrapper">
+          <div class="ios-segmented-control">
+            <button class="ios-segmented-btn active" data-filter="all">
+              <span>الكل</span>
+            </button>
+            <button class="ios-segmented-btn" data-filter="water_projects">
+              <span>💧 مياه - مشاريع</span>
+            </button>
+            <button class="ios-segmented-btn" data-filter="water_maintenance">
+              <span>💧 مياه - صيانة</span>
+            </button>
+            <button class="ios-segmented-btn" data-filter="sewer_projects">
+              <span>🚰 صرف - مشاريع</span>
+            </button>
+            <button class="ios-segmented-btn" data-filter="sewer_maintenance">
+              <span>🚰 صرف - صيانة</span>
+            </button>
+          </div>
+
+          <div class="ios-view-toggle">
+            <button class="ios-view-btn active" data-view="both">
+              <span>الخريطة والجدول</span>
+            </button>
+            <button class="ios-view-btn" data-view="map">
+              <span>الخريطة فقط</span>
+            </button>
+            <button class="ios-view-btn" data-view="table">
+              <span>الجدول فقط</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- OpenStreetMap Container -->
+        <section class="ios-map-container" id="mapSection">
+          <div id="map"></div>
+
+          <!-- Map Legend -->
+          <div class="ios-map-legend">
+            <div style="font-weight: 700; color: var(--ios-text-primary); border-bottom: 1px solid var(--ios-separator); padding-bottom: 3px; margin-bottom: 2px;">
+              دليل عناصر الخريطة
+            </div>
+            <div class="ios-legend-item">
+              <span class="ios-legend-chip" style="background: #007AFF;"></span>
+              <span>💧 مياه مشاريع (داخل KMZ)</span>
+            </div>
+            <div class="ios-legend-item">
+              <span class="ios-legend-chip" style="background: #5856D6;"></span>
+              <span>🚰 صرف مشاريع (داخل KMZ)</span>
+            </div>
+            <div class="ios-legend-item">
+              <span class="ios-legend-chip" style="background: #FF9500;"></span>
+              <span>⭐ عقود م. عبدالله الأسود (كامل الرياض)</span>
+            </div>
+            <div class="ios-legend-item">
+              <span class="ios-legend-chip" style="background: rgba(88, 86, 214, 0.25); border: 1px dashed #5856D6;"></span>
+              <span>نطاق مشروع معتمد (KMZ)</span>
+            </div>
+          </div>
+        </section>
+
+        <!-- Advanced Data Table Card -->
+        <section class="ios-glass ios-table-card" id="tableSection">
+          <div class="ios-table-toolbar">
+            <!-- Search Input -->
+            <div class="ios-search-box">
+              <span class="ios-search-icon">
+                <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <circle cx="11" cy="11" r="8"></circle>
+                  <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                </svg>
+              </span>
+              <input type="text" id="tableSearchInput" class="ios-search-input" placeholder="ابحث برقم البلاغ، المقاول، المشروع، الحي...">
+            </div>
+
+            <div style="display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+              <!-- Status Filter -->
+              <select id="tableStatusFilter" class="ios-filter-select">
+                <option value="all">جميع الحالات</option>
+              </select>
+
+              <!-- Dedicated / Dual Excel Export -->
+              <button id="exportExcelBtn" class="ios-btn ios-btn-primary" title="تصدير ملف Excel مخصص لمدير البرنامج أو شامل المياه والصرف">
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                  <polyline points="7 10 12 15 17 10"></polyline>
+                  <line x1="12" y1="15" x2="12" y2="3"></line>
+                </svg>
+                <span id="exportExcelBtnText">تصدير Excel</span>
+              </button>
+
+              <!-- Dedicated KMZ Exports (Water, Sewer, All) -->
+              <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+                <button id="exportKmzWaterBtn" class="ios-btn ios-btn-secondary ios-btn-sm" title="تصدير ملف KMZ خاص ببلاغات شبكات المياه فقط">
+                  <span>💧 KMZ مياه</span>
+                </button>
+                <button id="exportKmzSewerBtn" class="ios-btn ios-btn-secondary ios-btn-sm" title="تصدير ملف KMZ خاص ببلاغات الصرف الصحي فقط">
+                  <span>🚰 KMZ صرف</span>
+                </button>
+                <button id="exportKmzBtn" class="ios-btn ios-btn-secondary ios-btn-sm" title="تصدير كافة البلاغات المفلترة كملف KMZ">
+                  <span>🌍 KMZ شامل</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Table Wrapper -->
+          <div class="ios-table-wrapper">
+            <table class="ios-table">
+              <thead>
+                <tr>
+                  <th>رقم البلاغ</th>
+                  <th>القطاع والتصنيف</th>
+                  <th>مدير البرنامج المسؤول</th>
+                  <th>اسم المشروع المعتمد</th>
+                  <th>الحي والشارع</th>
+                  <th>المقاول المنفذ</th>
+                  <th>حالة البلاغ</th>
+                  <th>الإجراء</th>
+                </tr>
+              </thead>
+              <tbody id="reportsTableBody">
+                <!-- Injected via JavaScript -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Pagination -->
+          <div class="ios-pagination">
+            <div class="ios-pagination-info" id="tablePaginationInfo">عرض 0 من 0 بلاغ</div>
+            <div class="ios-pagination-controls" id="tablePaginationControls"></div>
+          </div>
+        </section>
+
+      </div>
+
+    </div>
+
+  </main>
+
+  <!-- iOS Action Sheet Modal with Manual Edit Capability -->
+  <div class="ios-action-sheet-backdrop" id="actionSheetBackdrop"></div>
+  <div class="ios-action-sheet" id="actionSheet">
+    <!-- Drag Handle -->
+    <div class="ios-sheet-handle" id="sheetHandle"></div>
+
+    <!-- Sheet Header -->
+    <div class="ios-sheet-header">
+      <div class="ios-sheet-title-group">
+        <h2 class="ios-sheet-title" id="sheetReportId">بلاغ رقم</h2>
+        <div class="ios-sheet-subtitle" id="sheetReportDept"></div>
+      </div>
+      <button class="ios-sheet-close-btn" id="sheetCloseBtn" title="إغلاق">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="18" y1="6" x2="6" y2="18"></line>
+          <line x1="6" y1="6" x2="18" y2="18"></line>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Sheet Scrollable Body -->
+    <div class="ios-sheet-body" id="sheetDetailsBody"></div>
+
+    <!-- Sheet Action Buttons Footer -->
+    <div class="ios-sheet-actions" id="sheetActionButtons"></div>
+  </div>
+
+  <!-- Loading Backdrop Overlay -->
+  <div class="ios-loading-backdrop" id="loadingOverlay">
+    <div class="ios-spinner"></div>
+    <div class="ios-loading-text" id="loadingText">جاري المعالجة...</div>
+  </div>
+
+  <!-- iOS Toast Notification -->
+  <div class="ios-toast" id="appToast">
+    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"></polyline>
+    </svg>
+    <span id="toastText">تمت العملية بنجاح</span>
+  </div>
+
+  <!-- Vendor Scripts -->
+  <script src="vendor/leaflet.js"></script>
+  <script src="vendor/leaflet.markercluster.js"></script>
+  <script src="vendor/xlsx.full.min.js"></script>
+  <script src="vendor/jszip.min.js"></script>
+  <script src="vendor/chart.umd.min.js"></script>
+
+  <!-- Application Modules -->
+  <script src="js/spatial-engine.js"></script>
+  <script src="js/kmz-loader.js"></script>
+  <script src="js/kmz-exporter.js"></script>
+  <script src="js/excel-parser.js"></script>
+  <script src="js/charts-manager.js"></script>
+  <script src="js/map-manager.js"></script>
+  <script src="js/action-sheet.js"></script>
+  <script src="js/table-manager.js"></script>
+  <script src="js/sidebar-manager.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
