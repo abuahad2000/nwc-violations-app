@@ -1,11 +1,15 @@
 import type { Metadata } from 'next';
 import '@fontsource-variable/noto-sans-arabic';
 import './globals.css';
+import { hasSiteAccess } from '@/lib/auth/private-access';
+import { redirect } from 'next/navigation';
 export const metadata: Metadata = {
   title: 'التعديات لإدارة المشاريع الرأسمالية',
   description: 'متابعة التعديات والمشاريع والإجراءات لإدارة المشاريع الرأسمالية',
+  robots: { index: false, follow: false, noarchive: true },
 };
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  if (!(await hasSiteAccess())) redirect('/entry');
   return (
     <html lang="ar" dir="rtl">
       <body className="tabler-app">

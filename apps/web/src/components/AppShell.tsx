@@ -17,6 +17,7 @@ import { Sheet } from './ui/sheet';
 import type { SessionUser } from '@/types';
 const links = [
   ['/dashboard', 'لوحة المتابعة', LayoutDashboard],
+  ['/infographic', 'إنفوجرافيك المشاريع', LayoutDashboard],
   ['/violations', 'سجل التعديات', ClipboardList],
   ['/map', 'الخريطة', Map],
   ['/contractors', 'المقاولون', Building2],
@@ -68,7 +69,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               : href === '/imports'
                 ? ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(user?.role || '')
                 : user?.role === 'CONTRACTOR_USER'
-                  ? !['/contractors', '/projects', '/programs'].includes(href)
+                  ? !['/contractors', '/projects', '/programs', '/infographic'].includes(href)
                   : true,
           )
           .map(([href, label, Icon]) => (

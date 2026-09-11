@@ -2,6 +2,7 @@ import { db } from '@/lib/db/async';
 import { SessionUser, UserRole } from '@/types';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
+import { hasSiteAccess } from './private-access';
 
 const SESSION_COOKIE_NAME = 'nwc_session';
 
@@ -32,6 +33,7 @@ export async function createSession(userId: string): Promise<string> {
 
 export async function getCurrentUser(): Promise<SessionUser | null> {
   try {
+    if (!(await hasSiteAccess())) return null;
     const cookieStore = await cookies();
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;

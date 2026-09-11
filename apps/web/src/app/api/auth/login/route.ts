@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { db, verifyPassword } from '@/lib/db/async';
 import { createSession } from '@/lib/auth/session';
 import { z } from 'zod';
+import { hasSiteAccess } from '@/lib/auth/private-access';
 
 const LoginSchema = z.object({
   email: z.string().trim().min(1).max(254),
@@ -12,6 +13,8 @@ const LoginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
+    if (!(await hasSiteAccess()))
+      return NextResponse.json({ message: 'غير متاح' }, { status: 404 });
     if (!isSameOrigin(req))
       return NextResponse.json({ message: 'مصدر الطلب غير مسموح' }, { status: 403 });
     const body = await req.json();
