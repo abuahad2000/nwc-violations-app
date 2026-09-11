@@ -140,7 +140,7 @@ test('batch assignment preserves source and closure, is atomic, can move to proj
   expect((await request.patch('/api/assignments',{headers:{Origin:'https://evil.example'},data:editPayload})).status()).toBe(403);
   await page.getByRole('button',{name:'تعديل متابعة البلاغ test-assignment-open',exact:true}).click();
   await page.getByRole('combobox',{name:'مدير هذا البلاغ',exact:true}).fill(manager);
-  await page.getByLabel('سبب تعديل المتابعة',{exact:true}).fill(editPayload.reason);
+  await page.getByLabel('سبب تعديل المتابعة',{exact:true}).fill('');
   await page.getByRole('button',{name:'حفظ تعديل البلاغ',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);
   expect((await request.patch('/api/assignments',{data:editPayload})).status()).toBe(409);
@@ -161,7 +161,7 @@ test('batch assignment preserves source and closure, is atomic, can move to proj
   await page.getByLabel('البحث برقم البلاغ أو الحي').fill('test-assignment-open');
   await page.getByRole('button',{name:'تعديل متابعة البلاغ test-assignment-open',exact:true}).click();
   await page.getByRole('combobox',{name:'نوع التعديل',exact:true}).selectOption('MAINTENANCE');
-  await page.getByLabel('سبب تعديل المتابعة',{exact:true}).fill('تحويل البلاغ إلى الصيانة للاختبار');
+  await page.getByLabel('سبب تعديل المتابعة',{exact:true}).fill('');
   await page.screenshot({path:'test-results/manager-dialog-mobile.png'});
   await page.getByRole('button',{name:'حفظ تعديل البلاغ',exact:true}).click();
   await expect(page.getByRole('dialog')).toHaveCount(0);

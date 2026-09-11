@@ -190,12 +190,10 @@ export default function Assignments() {
                 </p>
               )}
               <label className="block">
-                سبب تعديل المتابعة
+                سبب تعديل المتابعة (اختياري)
                 <input
                   aria-label="سبب تعديل المتابعة"
                   className="form-control field"
-                  required
-                  minLength={5}
                   maxLength={1000}
                   disabled={busy}
                   value={managerReason}

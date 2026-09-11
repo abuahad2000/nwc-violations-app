@@ -61,7 +61,7 @@ const bodySchema = z.object({
     .max(100),
   destination: z.enum(['PROJECT', 'MAINTENANCE']),
   project_id: z.string().max(100).optional(),
-  reason: z.string().trim().min(5).max(1000),
+  reason: z.string().trim().max(1000).default(''),
 });
 export async function POST(req: Request) {
   const auth = await authorize('projects:write', req);
@@ -164,7 +164,7 @@ const managerSchema = z.object({
   id: z.string().min(1).max(100),
   updated_at: z.string().max(50),
   manager_name: z.string().trim().max(200),
-  reason: z.string().trim().min(5).max(1000),
+  reason: z.string().trim().max(1000).default(''),
 });
 export async function PATCH(req: Request) {
   const auth = await authorize('projects:write', req);
