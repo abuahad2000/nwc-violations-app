@@ -7,7 +7,7 @@ export default function PasswordPage() {
   const router = useRouter();
   return (
     <form
-      className="surface mx-auto max-w-md space-y-5 p-8"
+      className="card surface mx-auto max-w-md space-y-5 p-8"
       onSubmit={async (e) => {
         e.preventDefault();
         setBusy(true);
@@ -35,7 +35,7 @@ export default function PasswordPage() {
       <label className="block">
         الكلمة الحالية
         <input
-          className="field mt-2"
+          className="form-control field mt-2"
           name="current"
           type="password"
           autoComplete="current-password"
@@ -45,7 +45,7 @@ export default function PasswordPage() {
       <label className="block">
         الكلمة الجديدة
         <input
-          className="field mt-2"
+          className="form-control field mt-2"
           name="password"
           type="password"
           autoComplete="new-password"
@@ -59,7 +59,7 @@ export default function PasswordPage() {
           {message}
         </p>
       )}
-      <button disabled={busy} className="primary">
+      <button disabled={busy} className="btn btn-primary primary">
         حفظ وتسجيل الدخول مجددًا
       </button>
     </form>

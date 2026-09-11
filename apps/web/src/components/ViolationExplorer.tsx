@@ -217,7 +217,7 @@ export default function ViolationExplorer({
                 : 'متابعة الحالة والموقع والإجراء'}
             </p>
           </div>
-          <a className="secondary" href={`/api/reports/export/excel?${query}`}>
+          <a className="btn secondary" href={`/api/reports/export/excel?${query}`}>
             <Download size={18} />
             تصدير النتائج
           </a>
@@ -246,7 +246,7 @@ export default function ViolationExplorer({
           </div>
         )}
         <form
-          className="surface grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5"
+          className="card surface grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5"
           onSubmit={(e) => {
             e.preventDefault();
             apply(draft);
@@ -255,7 +255,7 @@ export default function ViolationExplorer({
           <label className="xl:col-span-2">
             <span className="label">البحث</span>
             <input
-              className="field"
+              className="form-control field"
               value={draft.search}
               onChange={(e) => setDraft({ ...draft, search: e.target.value })}
               placeholder="رقم البلاغ، المقاول، الحي أو المشروع"
@@ -264,7 +264,7 @@ export default function ViolationExplorer({
           <label>
             <span className="label">التصنيف المكاني</span>
             <select
-              className="field"
+              className="form-control field"
               value={draft.classification}
               onChange={(e) => setDraft({ ...draft, classification: e.target.value })}
             >
@@ -279,7 +279,7 @@ export default function ViolationExplorer({
           <label>
             <span className="label">حالة السجل</span>
             <select
-              className="field"
+              className="form-control field"
               value={draft.open}
               onChange={(e) => setDraft({ ...draft, open: e.target.value })}
             >
@@ -289,11 +289,11 @@ export default function ViolationExplorer({
             </select>
           </label>
           <div className="flex items-end gap-2">
-            <button className="primary" disabled={busy}>
+            <button className="btn btn-primary primary" disabled={busy}>
               <Search size={18} />
               تطبيق
             </button>
-            <button type="button" className="secondary" onClick={() => apply(initial)}>
+            <button type="button" className="btn secondary" onClick={() => apply(initial)}>
               مسح
             </button>
           </div>
@@ -301,7 +301,7 @@ export default function ViolationExplorer({
         {filters.aging && (
           <p className="text-sm">
             فلتر عمر المفتوح: <bdi>{filters.aging}</bdi> يوم{' '}
-            <button className="secondary ms-2" onClick={() => apply({ ...filters, aging: '' })}>
+            <button className="btn secondary ms-2" onClick={() => apply({ ...filters, aging: '' })}>
               إزالة
             </button>
           </p>
@@ -314,7 +314,7 @@ export default function ViolationExplorer({
               {filters.source_status}
             </span>
             <button
-              className="secondary"
+              className="btn secondary"
               onClick={() => apply({ ...filters, manager: '', source_status: '' })}
             >
               إزالة تصفية الشارت
@@ -336,7 +336,7 @@ export default function ViolationExplorer({
           />
         )}
         {mode !== 'list' && <SpatialMap query={query} onSelect={details} />}
-        <section className="surface min-w-0 overflow-hidden">
+        <section className="card surface min-w-0 overflow-hidden">
           <div className="flex items-center gap-2 border-b border-slate-100 p-4">
             <MapPin size={18} />
             <h3 className="font-semibold">النتائج ({total.toLocaleString('ar-SA')})</h3>
@@ -347,7 +347,7 @@ export default function ViolationExplorer({
             )}
           </div>
           <div className="max-w-full overflow-x-auto">
-            <table className="w-full min-w-[760px] text-start text-sm">
+            <table className="table table-vcenter w-full min-w-[760px] text-start text-sm">
               <thead className="bg-slate-50 text-slate-500">
                 {table.getHeaderGroups().map((h) => (
                   <tr key={h.id}>
@@ -377,7 +377,7 @@ export default function ViolationExplorer({
           )}
           <div className="flex items-center justify-between gap-2 p-4">
             <button
-              className="secondary"
+              className="btn secondary"
               disabled={page <= 1 || busy}
               onClick={() => setPage((p) => p - 1)}
             >
@@ -388,7 +388,7 @@ export default function ViolationExplorer({
               {page} / {Math.max(1, Math.ceil(total / 25))}
             </span>
             <button
-              className="secondary"
+              className="btn secondary"
               disabled={page * 25 >= total || busy}
               onClick={() => setPage((p) => p + 1)}
             >

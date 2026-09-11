@@ -80,7 +80,7 @@ export default function ProjectsPage() {
       <div className="space-y-6">
         <h2 className="text-2xl font-bold">مرجع المشاريع والنطاقات</h2>
         <p className="text-slate-500">
-          مصدر المقاول ومدير المتابعة هو ملف بيانات المشاريع. اعتماد الاسم يربط النطاق بمرجع
+          مصدر المقاول ومدير المشروع هو ملف بيانات المشاريع. اعتماد الاسم يربط النطاق بمرجع
           المشروع؛ التصنيف نفسه يتم في PostGIS.
         </p>
         {error && (
@@ -89,21 +89,21 @@ export default function ProjectsPage() {
           </p>
         )}
         {message && (
-          <p className="surface p-4" role="status">
+          <p className="card surface p-4" role="status">
             {message}
           </p>
         )}
         {canWrite && (
           <div className="flex flex-wrap gap-3">
             <button
-              className="secondary"
+              className="btn secondary"
               disabled={busy}
               onClick={() => action({ action: 'sync-reference' })}
             >
               مزامنة مرجع المشاريع
             </button>
             <button
-              className="primary"
+              className="btn btn-primary primary"
               disabled={busy}
               onClick={() => action({ action: 'classify' })}
             >
@@ -111,7 +111,7 @@ export default function ProjectsPage() {
             </button>
           </div>
         )}
-        <section className="surface overflow-hidden">
+        <section className="card surface overflow-hidden">
           <div className="flex flex-wrap items-center justify-between gap-3 p-4">
             <h3 className="font-semibold">
               المشاريع ({visibleProjects.length} من {projects.length})
@@ -119,7 +119,7 @@ export default function ProjectsPage() {
             <label className="flex items-center gap-2 text-sm">
               نوع المشروع
               <select
-                className="field"
+                className="form-control field"
                 value={service}
                 onChange={(e) => setService(e.target.value as ServiceType | 'ALL')}
               >
@@ -137,7 +137,7 @@ export default function ProjectsPage() {
             تظهر للمراجعة.
           </p>
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[800px] text-start text-sm">
+            <table className="table table-vcenter w-full min-w-[800px] text-start text-sm">
               <thead className="bg-slate-50">
                 <tr>
                   {[
@@ -145,7 +145,7 @@ export default function ProjectsPage() {
                     'المشروع',
                     'نوع المشروع',
                     'المقاول',
-                    'مدير المتابعة',
+                    'مدير المشروع',
                     'مدير البرنامج',
                     'الحالة',
                     'النطاقات المعتمدة',
@@ -205,7 +205,7 @@ export default function ProjectsPage() {
           {boundaries.map((b) => (
             <form
               key={b.id}
-              className="surface space-y-3 p-4"
+              className="card surface space-y-3 p-4"
               onSubmit={(e) => {
                 e.preventDefault();
                 const f = new FormData(e.currentTarget);
@@ -243,7 +243,7 @@ export default function ProjectsPage() {
                     aria-label={`المشروع المطابق ${b.name}`}
                     name="project_id"
                     defaultValue={b.proposed_project_id || ''}
-                    className="field"
+                    className="form-control field"
                     required
                   >
                     <option value="">حدد المشروع المطابق من Excel</option>
@@ -253,7 +253,7 @@ export default function ProjectsPage() {
                       </option>
                     ))}
                   </select>
-                  <button className="secondary shrink-0" disabled={busy || !!b.approved}>
+                  <button className="btn secondary shrink-0" disabled={busy || !!b.approved}>
                     اعتماد الربط
                   </button>
                 </div>

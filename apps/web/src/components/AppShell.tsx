@@ -54,12 +54,13 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     return () => controller.abort();
   }, [router]);
   const navigation = (
-    <div className="flex h-full flex-col gap-6">
-      <div>
+    <div className="tabler-sidebar flex h-full flex-col gap-5 p-4">
+      <div className="border-b border-slate-600 pb-5">
+        <span className="avatar mb-3 bg-blue-600 text-white">{user?.name?.slice(0, 1)}</span>
         <p className="font-semibold">{user?.name}</p>
-        <p className="mt-1 text-sm text-slate-500">مساحة المتابعة التشغيلية</p>
+        <p className="sidebar-muted mt-1 text-xs">مساحة المتابعة التشغيلية</p>
       </div>
-      <nav aria-label="القائمة الرئيسية" className="space-y-1">
+      <nav aria-label="القائمة الرئيسية" className="nav flex-column space-y-1">
         {links
           .filter(([href]) =>
             href === '/settings'
@@ -76,7 +77,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               href={href}
               onClick={() => setOpen(false)}
               aria-current={pathname === href ? 'page' : undefined}
-              className={`flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold ${pathname === href ? 'bg-gradient-to-l from-cyan-700 to-brand-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`nav-link flex items-center gap-3 px-3 py-3 text-sm font-semibold ${pathname === href ? 'active' : ''}`}
             >
               <Icon size={20} />
               {label}
@@ -84,7 +85,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           ))}
       </nav>
       <button
-        className="secondary mt-auto"
+        className="btn secondary sidebar-logout mt-auto"
         onClick={async () => {
           const r = await fetch('/api/auth/logout', { method: 'POST' });
           if (r.ok) router.replace('/login');
@@ -94,6 +95,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <LogOut size={18} />
         تسجيل الخروج
       </button>
+      <a
+        href="https://tabler.io"
+        target="_blank"
+        rel="noopener noreferrer"
+        className="sidebar-muted text-center text-xs"
+      >
+        Tabler · MIT
+      </a>
     </div>
   );
   if (error)
@@ -110,11 +119,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   return (
     <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:gap-6">
-      <button className="secondary self-start lg:hidden print:hidden" onClick={() => setOpen(true)}>
+      <button
+        className="btn secondary self-start lg:hidden print:hidden"
+        onClick={() => setOpen(true)}
+      >
         <Menu size={20} />
         القائمة
       </button>
-      <aside className="surface app-navigation sticky top-4 hidden h-[calc(100vh-130px)] w-60 shrink-0 p-4 lg:block">
+      <aside className="app-navigation sticky top-4 hidden h-[calc(100vh-130px)] min-h-[720px] w-60 shrink-0 lg:block">
         {navigation}
       </aside>
       <Sheet open={open} onOpenChange={setOpen} title="القائمة">

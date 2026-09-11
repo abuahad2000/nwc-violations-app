@@ -38,7 +38,7 @@ export default function ManagerCharts({
   return (
     <div className="space-y-6" data-testid="manager-charts">
       <div className="grid gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
-        <section className="surface p-6">
+        <section className="card surface p-6">
           <p className="text-xs font-semibold tracking-wide text-teal-700">نظرة على الإنجاز</p>
           <h3 className="mt-2 text-lg font-bold">حالة معالجة التعديات</h3>
           <div
@@ -63,7 +63,7 @@ export default function ManagerCharts({
             </div>
           </div>
         </section>
-        <section className="surface p-6">
+        <section className="card surface p-6">
           <div className="mb-5 flex items-center gap-3">
             <span className="rounded-xl bg-teal-50 p-3 text-teal-700">
               <BarChart3 size={22} />
@@ -101,7 +101,7 @@ export default function ManagerCharts({
           </div>
         </section>
       </div>
-      <section className="surface overflow-hidden">
+      <section className="card surface overflow-hidden">
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 p-6">
           <div className="flex items-center gap-3">
             <span className="rounded-xl bg-slate-100 p-3">
@@ -117,7 +117,7 @@ export default function ManagerCharts({
           <label className="w-full sm:w-56">
             <span className="sr-only">البحث عن مدير مشروع</span>
             <input
-              className="field"
+              className="form-control field"
               placeholder="ابحث باسم مدير المشروع"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
@@ -159,7 +159,7 @@ export default function ManagerCharts({
                   <strong className="text-xl font-bold text-teal-700">
                     {number(m.contractor)}
                   </strong>
-                  <p className="mt-1 text-xs text-slate-500">منها لدى المقاول</p>
+                  <p className="mt-1 text-xs text-slate-500">مسندة للمقاول</p>
                 </div>
               </div>
               <div
@@ -188,7 +188,7 @@ export default function ManagerCharts({
         {!filtered.length && <p className="p-6 text-center text-slate-500">لا يوجد مدير مطابق.</p>}
         {filtered.length > 8 && (
           <div className="px-6 pb-5">
-            <button className="secondary w-full" onClick={() => setShowAll(!showAll)}>
+            <button className="btn secondary w-full" onClick={() => setShowAll(!showAll)}>
               {showAll ? 'عرض أقل' : `عرض جميع المديرين (${number(filtered.length)})`}
             </button>
           </div>
@@ -198,7 +198,7 @@ export default function ManagerCharts({
             {number(unassigned)} سجلًا بلا مدير مشروع مرتبط ضمن النتائج. الربط يعتمد على المشروع
             المكاني المعتمد؛ لا يُنسب البلاغ لمدير من اسم المقاول وحده.
           </p>
-          <button className="secondary" onClick={() => onManager('__unassigned__')}>
+          <button className="btn secondary" onClick={() => onManager('__unassigned__')}>
             عرض غير المرتبط
           </button>
         </div>

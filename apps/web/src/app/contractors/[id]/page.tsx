@@ -266,7 +266,7 @@ export default function ContractorDetailPage({ params }: { params: Promise<{ id:
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-start text-sm">
+            <table className="table table-vcenter w-full text-start text-sm">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                 <tr>
                   <th className="p-3">رقم البلاغ</th>

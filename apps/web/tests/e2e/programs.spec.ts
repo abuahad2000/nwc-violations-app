@@ -35,6 +35,10 @@ test('program report, email and export contain the same nonclosed records', asyn
   await page.keyboard.press('Escape');
   await page.screenshot({ path: 'test-results/programs-desktop.png', fullPage: true });
   await page.setViewportSize({ width: 390, height: 844 });
+  const statusChart = page
+    .locator('section')
+    .filter({ has: page.getByRole('heading', { name: 'المعلّق بحسب حالة المصدر', exact: true }) });
+  expect((await statusChart.boundingBox())!.width).toBeGreaterThan(280);
   expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(390);
   await page.screenshot({ path: 'test-results/programs-mobile.png', fullPage: true });
 });

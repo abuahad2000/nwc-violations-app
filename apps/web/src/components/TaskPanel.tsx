@@ -97,7 +97,7 @@ export default function TaskPanel({
         >
           <label className="block text-sm">
             الجهة المسؤولة
-            <select className="field mt-2" name="owner_id" defaultValue={owner || ''} required>
+            <select className="form-control field mt-2" name="owner_id" defaultValue={owner || ''} required>
               <option value="">حدد الجهة</option>
               {contractors.map((c) => (
                 <option key={c.id} value={c.id}>
@@ -108,13 +108,13 @@ export default function TaskPanel({
           </label>
           <label className="block text-sm">
             سبب الإسناد
-            <input className="field mt-2" name="reason" minLength={5} maxLength={1000} required />
+            <input className="form-control field mt-2" name="reason" minLength={5} maxLength={1000} required />
           </label>
           <label className="block text-sm">
             موعد معتمد (اختياري)
-            <input className="field mt-2" name="due_date" type="date" />
+            <input className="form-control field mt-2" name="due_date" type="date" />
           </label>
-          <button className="primary" disabled={busy}>
+          <button className="btn btn-primary primary" disabled={busy}>
             حفظ الإسناد
           </button>
         </form>

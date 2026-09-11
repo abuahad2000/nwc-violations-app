@@ -23,7 +23,7 @@ export function Sheet({
         >
           <div className="mb-6 flex items-center justify-between gap-4">
             <Dialog.Title className="text-xl font-bold">{title}</Dialog.Title>
-            <Dialog.Close aria-label="إغلاق" className="secondary">
+            <Dialog.Close aria-label="إغلاق" className="btn secondary">
               <X size={20} />
             </Dialog.Close>
           </div>

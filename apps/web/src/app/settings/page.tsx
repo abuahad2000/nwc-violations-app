@@ -43,14 +43,14 @@ export default function SettingsPage() {
           </p>
         </header>
         {message && (
-          <p className="surface p-4" role="status">
+          <p className="card surface p-4" role="status">
             {message}
           </p>
         )}
         {allowed && (
           <>
             <form
-              className="surface grid gap-4 p-6 sm:grid-cols-2"
+              className="card surface grid gap-4 p-6 sm:grid-cols-2"
               onSubmit={async (e) => {
                 e.preventDefault();
                 const form = e.currentTarget;
@@ -76,16 +76,16 @@ export default function SettingsPage() {
             >
               <label>
                 الاسم
-                <input className="field mt-2" name="name" minLength={2} required />
+                <input className="form-control field mt-2" name="name" minLength={2} required />
               </label>
               <label>
                 البريد
-                <input className="field mt-2" name="email" type="email" required dir="ltr" />
+                <input className="form-control field mt-2" name="email" type="email" required dir="ltr" />
               </label>
               <label>
                 كلمة مرور أولية
                 <input
-                  className="field mt-2"
+                  className="form-control field mt-2"
                   name="password"
                   type="password"
                   minLength={12}
@@ -96,17 +96,17 @@ export default function SettingsPage() {
               </label>
               <label>
                 الدور
-                <select className="field mt-2" name="role">
+                <select className="form-control field mt-2" name="role">
                   <option value="READER">قارئ</option>
                   <option value="PROGRAM_MANAGER">مدير برنامج</option>
                   <option value="SUPER_ADMIN">مدير نظام</option>
                 </select>
               </label>
-              <button className="primary" disabled={busy}>
+              <button className="btn btn-primary primary" disabled={busy}>
                 إنشاء حساب مخول
               </button>
             </form>
-            <section className="surface divide-y divide-slate-100 p-6">
+            <section className="card surface divide-y divide-slate-100 p-6">
               {users.map((u) => (
                 <div key={u.id} className="flex flex-wrap justify-between gap-3 py-4">
                   <div>
@@ -131,7 +131,7 @@ export default function SettingsPage() {
                   </span>
                   <div className="max-w-64">
                     <button
-                      className="secondary text-rose-700"
+                      className="btn secondary text-rose-700"
                       disabled={busy || !!u.delete_reason}
                       onClick={() => setDeleting(u)}
                       aria-label={`حذف حساب ${u.name}`}
@@ -162,7 +162,7 @@ export default function SettingsPage() {
         <div className="mt-6 flex gap-3">
           <button
             disabled={busy}
-            className="primary bg-rose-700 hover:bg-rose-800"
+            className="btn btn-primary primary bg-rose-700 hover:bg-rose-800"
             onClick={async () => {
               if (!deleting) return;
               setBusy(true);
@@ -187,7 +187,7 @@ export default function SettingsPage() {
           >
             {busy ? 'جارٍ الحذف…' : 'تأكيد حذف الحساب'}
           </button>
-          <button className="secondary" disabled={busy} onClick={() => setDeleting(null)}>
+          <button className="btn secondary" disabled={busy} onClick={() => setDeleting(null)}>
             إلغاء
           </button>
         </div>

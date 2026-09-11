@@ -236,7 +236,7 @@ export default function ReportsPage() {
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-right text-xs">
+            <table className="table table-vcenter w-full text-right text-xs">
               <thead className="bg-slate-50 border-b border-slate-200 text-slate-600 font-bold">
                 <tr>
                   <th className="p-3">اسم المقاول / الشركة</th>

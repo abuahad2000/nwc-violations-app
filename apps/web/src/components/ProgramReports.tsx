@@ -25,7 +25,7 @@ const number = (n: number) => n.toLocaleString('ar-SA');
 function Bars({ title, rows }: { title: string; rows: { name: string; count: number }[] }) {
   const max = Math.max(1, ...rows.map((r) => r.count));
   return (
-    <section className="surface p-5">
+    <section className="card surface p-5">
       <h3 className="mb-5 font-bold">{title}</h3>
       <div className="space-y-4">
         {rows.length ? (
@@ -102,7 +102,7 @@ export default function ProgramReports() {
     );
   if (!data)
     return (
-      <p role="status" className="surface p-8">
+      <p role="status" className="card surface p-8">
         جارٍ إعداد تقارير مديري البرامج…
       </p>
     );
@@ -141,12 +141,12 @@ export default function ProgramReports() {
           المرجع مع تطبيق المطابقات المعتمدة؛ تبقى اختلافات الأسماء الأخرى منفصلة حتى اعتمادها.
         </p>
       )}
-      <section className="surface p-5 print:hidden">
+      <section className="card surface p-5 print:hidden">
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="text-sm font-medium">
             البحث عن مدير برنامج
             <input
-              className="field mt-2"
+              className="form-control field mt-2"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="اكتب اسم المدير"
@@ -155,7 +155,7 @@ export default function ProgramReports() {
           <label className="text-sm font-medium">
             مدير البرنامج
             <select
-              className="field mt-2"
+              className="form-control field mt-2"
               value={manager?.key || ''}
               onChange={(e) => {
                 setSelected(e.target.value);
@@ -192,7 +192,7 @@ export default function ProgramReports() {
             ))}
         </div>
       </section>
-      {!manager && <p className="surface p-6">لا توجد أسماء مديري برامج في المرجع الحالي.</p>}
+      {!manager && <p className="card surface p-6">لا توجد أسماء مديري برامج في المرجع الحالي.</p>}
       {manager && (
         <>
           <div className="flex flex-wrap items-center justify-between gap-4">
@@ -204,15 +204,15 @@ export default function ProgramReports() {
               </p>
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
-              <button className="secondary" onClick={() => window.print()}>
+              <button className="btn secondary" onClick={() => window.print()}>
                 <Printer size={17} />
                 طباعة / PDF
               </button>
-              <a className="secondary" href={exportURL}>
+              <a className="btn secondary" href={exportURL}>
                 <Download size={17} />
                 Excel المعلّق
               </a>
-              <button className="primary" onClick={() => setEmailOpen(true)}>
+              <button className="btn btn-primary primary" onClick={() => setEmailOpen(true)}>
                 <Mail size={17} />
                 صيغة البريد
               </button>
@@ -245,7 +245,7 @@ export default function ProgramReports() {
                 color: 'text-rose-700 bg-rose-50',
               },
             ].map(({ label, value, icon: Icon, color }) => (
-              <div className="surface p-5" key={label}>
+              <div className="card surface p-5" key={label}>
                 <span className={`mb-4 inline-flex rounded-xl p-2 ${color}`}>
                   <Icon size={21} />
                 </span>
@@ -255,7 +255,7 @@ export default function ProgramReports() {
             ))}
           </div>
           <div className="grid gap-5 lg:grid-cols-3">
-            <section className="surface p-5">
+            <section className="card surface p-5">
               <h3 className="font-bold">نسبة إغلاق البلاغات</h3>
               <div
                 className="mx-auto my-5 grid h-40 w-40 place-items-center rounded-full"
@@ -292,12 +292,12 @@ export default function ProgramReports() {
               }, {}),
             ).sort((a, b) => b.count - a.count)}
           />
-          <section className="surface overflow-hidden">
+          <section className="card surface overflow-hidden">
             <h3 className="p-5 font-bold">
               مشاريع البرنامج ومديرو المتابعة ({number(manager.projects.length)})
             </h3>
             <div className="overflow-x-auto">
-              <table className="report-table">
+              <table className="table table-vcenter report-table">
                 <thead>
                   <tr>
                     {['الرقم التشغيلي', 'المشروع', 'المقاول', 'مدير المشروع', 'الحالة'].map((h) => (
@@ -329,7 +329,7 @@ export default function ProgramReports() {
               </table>
             </div>
           </section>
-          <section className="surface overflow-hidden">
+          <section className="card surface overflow-hidden">
             <h3 className="p-5 font-bold">تفاصيل البلاغات المعلقة ({number(manager.open)})</h3>
             {!manager.open ? (
               <p className="px-5 pb-5 text-sm text-emerald-700">
@@ -337,7 +337,7 @@ export default function ProgramReports() {
               </p>
             ) : (
               <div className="overflow-x-auto">
-                <table className="report-table">
+                <table className="table table-vcenter report-table">
                   <thead>
                     <tr>
                       {[
@@ -397,11 +397,11 @@ export default function ProgramReports() {
         </p>
         <label className="text-sm">
           نص البريد
-          <textarea className="field mt-2 min-h-96 leading-7" readOnly value={email} />
+          <textarea className="form-control field mt-2 min-h-96 leading-7" readOnly value={email} />
         </label>
         <div className="mt-4 flex flex-wrap gap-2">
           <button
-            className="primary"
+            className="btn btn-primary primary"
             onClick={async () => {
               try {
                 await navigator.clipboard.writeText(email);
@@ -413,10 +413,10 @@ export default function ProgramReports() {
           >
             نسخ البريد
           </button>
-          <button className="secondary" onClick={downloadEmail}>
+          <button className="btn secondary" onClick={downloadEmail}>
             تنزيل النص
           </button>
-          <a className="secondary" href={exportURL}>
+          <a className="btn secondary" href={exportURL}>
             تنزيل Excel للإرفاق
           </a>
         </div>

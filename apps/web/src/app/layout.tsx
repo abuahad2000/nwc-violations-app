@@ -8,9 +8,9 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="ar" dir="rtl">
-      <body>
-        <header className="border-b border-slate-200 bg-white px-4 py-4">
-          <div className="mx-auto flex max-w-[1600px] items-center gap-3">
+      <body className="tabler-app">
+        <header className="navbar navbar-light border-b border-slate-200 bg-white px-4 py-4">
+          <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3">
             <span
               className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-900 text-xl font-bold text-white"
               aria-hidden="true"

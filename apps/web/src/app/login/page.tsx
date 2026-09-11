@@ -9,7 +9,7 @@ export default function LoginPage() {
   return (
     <div className="mx-auto max-w-md py-12">
       <form
-        className="surface space-y-6 p-8"
+        className="card surface space-y-6 p-8"
         onSubmit={async (e) => {
           e.preventDefault();
           setBusy(true);
@@ -45,7 +45,7 @@ export default function LoginPage() {
             autoComplete="username"
             required
             dir="ltr"
-            className="field mt-2"
+            className="form-control field mt-2"
           />
         </label>
         <label className="block">
@@ -55,7 +55,7 @@ export default function LoginPage() {
             type="password"
             autoComplete="current-password"
             required
-            className="field mt-2"
+            className="form-control field mt-2"
           />
         </label>
         {error && (
@@ -63,7 +63,7 @@ export default function LoginPage() {
             {error}
           </p>
         )}
-        <button className="primary w-full" disabled={busy}>
+        <button className="btn btn-primary primary w-full" disabled={busy}>
           {busy ? 'جارٍ الدخول…' : 'تسجيل الدخول'}
         </button>
         <p className="text-sm text-slate-500">

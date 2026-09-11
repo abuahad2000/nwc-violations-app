@@ -1,12 +1,15 @@
+@layer theme, base, tabler, components, utilities;
 @import 'tailwindcss';
+@import '../styles/tabler.generated.css' layer(tabler);
 @import 'maplibre-gl/dist/maplibre-gl.css';
 @theme {
   --font-sans: 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
-  --color-brand-600: #0e7c86;
+  --color-brand-600: #206bc4;
   --color-brand-900: #0f2744;
 }
 :root {
   color-scheme: light;
+  --tblr-font-sans-serif: 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
 }
 html,
 body {
@@ -18,6 +21,67 @@ body {
 }
 * {
   box-sizing: border-box;
+}
+h1,
+h2,
+h3,
+h4,
+p {
+  margin: 0;
+}
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+.tabler-sidebar {
+  background: #182433;
+  border: 1px solid #263549;
+  border-radius: 10px;
+  color: #e8eef7;
+}
+.tabler-sidebar .nav-link {
+  color: #bdc9da;
+  border-radius: 6px;
+  min-height: 46px;
+}
+.tabler-sidebar .nav-link:hover {
+  color: white;
+  background: #24364d;
+}
+.tabler-sidebar .nav-link.active {
+  color: white;
+  background: #206bc4;
+}
+.tabler-sidebar .sidebar-muted {
+  color: #9eb0c7;
+}
+.tabler-sidebar .sidebar-logout {
+  color: #dbe7f4;
+  background: #24364d;
+  border-color: #344960;
+}
+.tabler-app .navbar {
+  --tblr-navbar-border-color: #e6e7e9;
+}
+.tabler-app .dashboard-hero {
+  background: white;
+  color: #182433;
+  border: 1px solid #e6e7e9;
+  border-top: 3px solid #206bc4;
+  box-shadow: 0 2px 4px #18243306;
+  border-radius: 10px;
+}
+.tabler-app .dashboard-hero .text-cyan-100,
+.tabler-app .dashboard-hero .text-teal-200,
+.tabler-app .dashboard-hero .text-slate-200,
+.tabler-app .dashboard-hero .text-slate-500 {
+  color: #62748b;
+}
+.tabler-app .dashboard-hero .bg-white\/15 {
+  background: #edf3fa;
+  color: #206bc4;
 }
 button,
 a,
@@ -64,8 +128,8 @@ button:disabled {
     border-radius: 4px;
   }
   .surface {
-    @apply rounded-2xl border border-slate-200 bg-white;
-    box-shadow: 0 4px 20px -12px #193c6555;
+    @apply rounded-lg border border-slate-200 bg-white;
+    box-shadow: 0 2px 4px #18243306;
   }
   .report-table {
     @apply w-full min-w-[760px] text-start text-sm;
@@ -81,13 +145,13 @@ button:disabled {
   }
 
   .field {
-    @apply w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm;
+    @apply w-full min-w-0 rounded-md border border-slate-300 bg-white px-3 py-3 text-sm;
   }
   .primary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-teal-800 disabled:opacity-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-blue-800 disabled:opacity-50;
   }
   .secondary {
-    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50;
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-md border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50;
   }
   .notice-error {
     @apply rounded-xl border border-red-200 bg-red-50 p-4 text-red-800;
@@ -115,8 +179,9 @@ button:disabled {
     background: white;
     font-size: 10px;
   }
-  .dashboard-hero {
-    background: #0f2744 !important;
+  .tabler-app .dashboard-hero {
+    background: white !important;
+    color: #182433;
     print-color-adjust: exact;
   }
   .program-report .surface {

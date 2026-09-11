@@ -83,16 +83,16 @@ export default function ImportsPage() {
           </p>
         )}
         {message && (
-          <p role="status" className="surface p-4 text-teal-800">
+          <p role="status" className="card surface p-4 text-teal-800">
             {message}
           </p>
         )}
         {allowed && (
-          <section className="surface space-y-4 p-6">
+          <section className="card surface space-y-4 p-6">
             <h3 className="font-bold">١. اختيار المصدر</h3>
             <div className="flex flex-wrap items-center gap-4">
               <button
-                className="secondary"
+                className="btn secondary"
                 disabled={busy}
                 onClick={() => action({ action: 'preview-local' })}
               >
@@ -105,7 +105,7 @@ export default function ImportsPage() {
                   type="file"
                   accept=".xlsx"
                   disabled={busy}
-                  className="field mt-2"
+                  className="form-control field mt-2"
                   onChange={(e) => {
                     setPreview(null);
                     const f = e.target.files?.[0];
@@ -126,7 +126,7 @@ export default function ImportsPage() {
         )}
         {busy && <p role="status">جارٍ المعالجة…</p>}
         {preview && (
-          <section className="surface space-y-4 p-6">
+          <section className="card surface space-y-4 p-6">
             <h3 className="font-bold">٢. مراجعة واعتماد: {preview.filename}</h3>
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
               {[
@@ -146,7 +146,7 @@ export default function ImportsPage() {
               الإسناد الحالي تلقائيًا.
             </p>
             <div className="overflow-x-auto">
-              <table className="w-full text-start text-sm">
+              <table className="table table-vcenter w-full text-start text-sm">
                 <thead>
                   <tr>
                     <th>المرجع</th>
@@ -168,7 +168,7 @@ export default function ImportsPage() {
               </table>
             </div>
             <button
-              className="primary"
+              className="btn btn-primary primary"
               disabled={busy || preview.is_duplicate}
               onClick={() => action({ action: 'commit', preview_id: preview.preview_id })}
             >
@@ -176,7 +176,7 @@ export default function ImportsPage() {
             </button>
           </section>
         )}
-        <section className="surface p-6">
+        <section className="card surface p-6">
           <h3 className="mb-4 font-bold">سجل الدفعات</h3>
           {batches.map((b) => (
             <div

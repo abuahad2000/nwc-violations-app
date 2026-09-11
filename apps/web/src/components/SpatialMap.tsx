@@ -196,7 +196,7 @@ export default function SpatialMap({
     return () => controller.abort();
   }, [query, ready, service]);
   return (
-    <section className="surface overflow-hidden">
+    <section className="card surface overflow-hidden">
       <div className="flex flex-wrap justify-between gap-2 border-b border-slate-100 p-4">
         <h3 className="font-semibold">
           التوزيع المكاني {count !== null ? `(${count} نقطة)` : '— جارٍ التحميل'}
@@ -209,7 +209,7 @@ export default function SpatialMap({
         <label className="flex items-center gap-2 text-sm font-medium">
           نوع المشروع على الخريطة
           <select
-            className="field"
+            className="form-control field"
             value={service}
             onChange={(e) => setService(e.target.value as ServiceType | 'ALL')}
           >
