@@ -6,15 +6,17 @@ const programBaseKeySQL = managerKeySQL.replaceAll(
   'p.project_manager_name',
   'p.program_manager_name',
 );
-// These two identity matches were explicitly confirmed by the project owner on 2026-09-12.
+// These identity matches were explicitly confirmed by the project owner on 2026-09-12.
 export const programKeySQL = `CASE ${programBaseKeySQL}
  WHEN 'تركي الاسمري' THEN 'تركي ظافر الاسمري'
  WHEN 'تركي ظافر يحيي الاسمري' THEN 'تركي ظافر الاسمري'
  WHEN 'عبدالله العنزي' THEN 'عبدالله علي العنزي'
+ WHEN 'عبدالله الاسود' THEN 'عبدالله الاسود العنزي'
  ELSE ${programBaseKeySQL} END`;
 export const programNameSQL = `CASE ${programKeySQL}
  WHEN 'تركي ظافر الاسمري' THEN 'تركي ظافر الاسمري'
  WHEN 'عبدالله علي العنزي' THEN 'عبدالله علي العنزي'
+ WHEN 'عبدالله الاسود العنزي' THEN 'عبدالله الأسود العنزي'
  ELSE trim(COALESCE(p.program_manager_name,'')) END`;
 
 export type ManagerSummary = {
