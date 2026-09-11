@@ -3,13 +3,13 @@
 @import '../styles/tabler.generated.css' layer(tabler);
 @import 'maplibre-gl/dist/maplibre-gl.css';
 @theme {
-  --font-sans: 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
+  --font-sans: 'Sakkal Majalla', 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
   --color-brand-600: #206bc4;
   --color-brand-900: #0f2744;
 }
 :root {
   color-scheme: light;
-  --tblr-font-sans-serif: 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
+  --tblr-font-sans-serif: 'Sakkal Majalla', 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
 }
 html,
 body {

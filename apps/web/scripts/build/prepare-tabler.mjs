@@ -10,7 +10,7 @@ const result = compileString(
   $enable-cssgrid: false,
   $font-google: null,
   $font-google-monospaced: null,
-  $font-family-sans-serif: ('Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif),
+  $font-family-sans-serif: ('Sakkal Majalla', 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif),
   $primary: #206bc4
 );`,
   { loadPaths: ['node_modules'], style: 'expanded', quietDeps: true, charset: false },
