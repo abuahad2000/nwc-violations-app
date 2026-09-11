@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .prepare(
         `
       SELECT
-        v.id, v.source_reference, v.reported_contractor_name, v.classification,
+        v.id, v.source_reference, COALESCE((SELECT name FROM contractors WHERE id=v.reported_contractor_id),v.reported_contractor_name) as reported_contractor_name, v.classification,
         v.classification_reason, v.source_status, v.reported_date, v.incident_date,
         v.age_days, v.district_raw, v.street_raw, v.updated_at,
         p.name as project_name, c_proj.name as project_contractor_name,
@@ -48,7 +48,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .prepare(
         `
       SELECT
-        v.id, v.source_reference, v.reported_contractor_name, v.classification,
+        v.id, v.source_reference, COALESCE((SELECT name FROM contractors WHERE id=v.reported_contractor_id),v.reported_contractor_name) as reported_contractor_name, v.classification,
         v.classification_reason, v.source_status, v.reported_date, v.incident_date,
         v.age_days, v.district_raw, v.street_raw, v.updated_at,
         p.name as project_name, p.operational_number as project_op_number,
@@ -66,7 +66,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .prepare(
         `
       SELECT
-        v.id, v.source_reference, v.reported_contractor_name, v.classification,
+        v.id, v.source_reference, COALESCE((SELECT name FROM contractors WHERE id=v.reported_contractor_id),v.reported_contractor_name) as reported_contractor_name, v.classification,
         v.classification_reason, v.source_status, v.reported_date, v.incident_date,
         v.age_days, v.district_raw, v.street_raw, v.updated_at,
         p.name as project_name

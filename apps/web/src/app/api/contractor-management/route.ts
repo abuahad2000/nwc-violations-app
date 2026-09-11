@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { authorize } from '@/lib/auth/guard';
 import { db } from '@/lib/db/async';
+import { findContractor, saveContractorAlias } from '@/lib/domain/contractor-alias';
 const fields =
   'id,name,operational_number,contractor_id,project_manager_name,program_manager_name,executive_director_name,subprogram_name';
 const version = (row: object) => createHash('sha256').update(JSON.stringify(row)).digest('hex');
@@ -61,11 +62,16 @@ export async function PATCH(req: Request) {
           message: 'تغيرت البيانات منذ فتحها. أعد تحميل الصفحة ثم راجع التعديل.',
         };
       if (input.kind === 'contractor') {
+        const alias = await findContractor(input.name);
+        if (alias && alias.id !== input.id)
+          return { status: 409, message: 'هذا الاسم أو أحد أشكاله مسجل لمقاول آخر' };
         const duplicate = await db
           .prepare('SELECT id FROM contractors WHERE name=? AND id!=?')
           .get(input.name, input.id);
         if (duplicate) return { status: 409, message: 'يوجد مقاول آخر بهذا الاسم' };
         await db.prepare('UPDATE contractors SET name=? WHERE id=?').run(input.name, input.id);
+        await saveContractorAlias(String(before.name), input.id);
+        await saveContractorAlias(input.name, input.id);
       } else {
         await db
           .prepare(

@@ -15,6 +15,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         `
       SELECT
         v.*,
+        v.reported_contractor_name as source_reported_contractor_name,
+        COALESCE(c_rep.name,v.reported_contractor_name) as reported_contractor_name,
         p.name as project_name,
         p.operational_number as project_op_number,
         p.scope_description as project_scope,

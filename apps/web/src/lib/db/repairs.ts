@@ -13,6 +13,9 @@ export function applyRepairs(db: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   `);
     const columns = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+    db.exec(
+      'CREATE TABLE IF NOT EXISTS contractor_aliases(alias_name TEXT PRIMARY KEY,normalized_name TEXT NOT NULL,contractor_id TEXT NOT NULL REFERENCES contractors(id)); CREATE INDEX IF NOT EXISTS contractor_aliases_normalized ON contractor_aliases(normalized_name);',
+    );
     const projectColumns = db.prepare('PRAGMA table_info(projects)').all() as { name: string }[];
     for (const field of ['executive_director_name', 'subprogram_name']) {
       if (!projectColumns.some((c) => c.name === field))

@@ -54,9 +54,9 @@ export function buildViolationFilter(f: Filters, user: SessionUser) {
   }
   if (f.search) {
     clauses.push(
-      '(v.source_reference LIKE ? OR v.description_raw LIKE ? OR v.district_raw LIKE ? OR v.street_raw LIKE ? OR v.reported_contractor_name LIKE ? OR p.name LIKE ?)',
+      '(v.source_reference LIKE ? OR v.description_raw LIKE ? OR v.district_raw LIKE ? OR v.street_raw LIKE ? OR v.reported_contractor_name LIKE ? OR p.name LIKE ? OR EXISTS(SELECT 1 FROM contractors c_name WHERE c_name.id=v.reported_contractor_id AND c_name.name LIKE ?))',
     );
-    params.push(...Array<string>(6).fill(`%${f.search}%`));
+    params.push(...Array<string>(7).fill(`%${f.search}%`));
   }
   if (f.classification) {
     clauses.push('v.classification = ?');

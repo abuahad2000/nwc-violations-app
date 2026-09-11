@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
         `
       SELECT 
         v.source_reference as "رقم البلاغ",
-        v.reported_contractor_name as "مقاول المصدر (المبلغ عنه)",
+        COALESCE((SELECT name FROM contractors WHERE id=v.reported_contractor_id),v.reported_contractor_name) as "مقاول المصدر (المبلغ عنه)",
+        v.reported_contractor_name as "اسم المقاول كما ورد في الملف",
         c_proj.name as "مقاول المشروع المكاني المعتمد",
         p.name as "اسم المشروع المكاني",
         p.operational_number as "الرقم التشغيلي للمشروع",

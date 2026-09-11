@@ -28,7 +28,8 @@ export async function GET(req: NextRequest) {
       SELECT
         v.id,
         v.source_reference,
-        v.reported_contractor_name,
+        COALESCE((SELECT name FROM contractors WHERE id=v.reported_contractor_id),v.reported_contractor_name) as reported_contractor_name,
+        v.reported_contractor_name as source_reported_contractor_name,
         v.reported_contractor_id,
         v.project_contractor_id,
         v.current_action_owner_id,

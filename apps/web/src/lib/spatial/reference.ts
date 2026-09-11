@@ -3,6 +3,7 @@ import path from 'node:path';
 import { db } from '@/lib/db/async';
 import { postgis } from './postgis';
 import crypto from 'node:crypto';
+import { findContractor } from '@/lib/domain/contractor-alias';
 import type { PolygonGeometry } from '@/types';
 type Project = {
   id: string;
@@ -42,9 +43,7 @@ export async function initializeReference(userId: string) {
     await db.exec("UPDATE projects SET status='REVIEW'");
     for (const project of data.projects) {
       if (!project.contractor_id) continue;
-      let contractor = await db
-        .prepare('SELECT id FROM contractors WHERE name=?')
-        .get(project.contractor_name);
+      let contractor = await findContractor(project.contractor_name);
       if (!contractor) {
         await db
           .prepare('INSERT INTO contractors VALUES (?,?,1,?)')

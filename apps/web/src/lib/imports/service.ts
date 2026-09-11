@@ -1,6 +1,7 @@
 import crypto from 'crypto';
 import { db } from '@/lib/db/async';
 import { readWorkbook } from './workbook';
+import { findContractor } from '@/lib/domain/contractor-alias';
 
 export async function previewImport(buffer: Buffer, filename: string, userId: string) {
   const parsed = await readWorkbook(buffer);
@@ -88,7 +89,13 @@ export async function commitImport(id: string, userId: string) {
           JSON.stringify({ sheet: data.sheet, row: record.row, raw: record.raw }),
           now,
         );
-      const values = record.normalized;
+      const resolvedContractor = record.normalized.reported_contractor_name
+        ? await findContractor(record.normalized.reported_contractor_name)
+        : null;
+      const values = {
+        ...record.normalized,
+        reported_contractor_id: resolvedContractor?.id ?? null,
+      };
       const keys = Object.keys(values);
       if (old) {
         await db
