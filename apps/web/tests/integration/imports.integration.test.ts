@@ -29,6 +29,9 @@ describe('Real import preview and commit on isolated database', () => {
       `CREATE TABLE users (id TEXT,must_change_password INTEGER);CREATE TABLE contractors(id TEXT PRIMARY KEY,name TEXT UNIQUE,is_approved INTEGER,created_at TEXT);CREATE TABLE projects(id TEXT);CREATE TABLE project_boundaries(id TEXT,is_approved INTEGER);CREATE TABLE violations(id TEXT PRIMARY KEY,source_reference TEXT UNIQUE,reported_contractor_name TEXT,reported_contractor_id TEXT,project_contractor_id TEXT,current_action_owner_id TEXT,project_id TEXT,latitude REAL,longitude REAL,classification TEXT,classification_reason TEXT,source_status TEXT,reported_date TEXT,incident_date TEXT,age_days INTEGER,description_raw TEXT,district_raw TEXT,street_raw TEXT,city_raw TEXT,is_closed INTEGER,import_batch_id TEXT,created_at TEXT,updated_at TEXT);CREATE TABLE import_batches(id TEXT PRIMARY KEY,filename TEXT,file_hash TEXT,total_rows INTEGER,imported_rows INTEGER,status TEXT,imported_by TEXT,created_at TEXT);CREATE TABLE audit_events(id TEXT,action TEXT,entity_type TEXT,entity_id TEXT,performed_by TEXT,details TEXT,created_at TEXT);`,
     );
     applyRepairs(db);
+    db.exec(
+      'ALTER TABLE projects ADD COLUMN name TEXT; ALTER TABLE projects ADD COLUMN contractor_id TEXT; ALTER TABLE projects ADD COLUMN status TEXT',
+    );
   });
   afterAll(() => isolated.db?.close());
   it('treats processed as closed and preserves leading zeros / missing coordinates', () => {
@@ -45,6 +48,12 @@ describe('Real import preview and commit on isolated database', () => {
     expect(isolated.db!.prepare('SELECT count(*) n FROM violations').get()!.n).toBe(0);
     await expect(commitImport(p.preview_id, 'other')).rejects.toThrow();
     expect((await commitImport(p.preview_id, 'admin')).imported_rows).toBe(1);
+    expect(
+      isolated.db!.prepare('SELECT current_action_owner_id,is_closed FROM violations').get(),
+    ).toMatchObject({ current_action_owner_id: 'cont_nwc_operations', is_closed: 1 });
+    expect(isolated.db!.prepare("SELECT count(*) n FROM tasks WHERE status='OPEN'").get()!.n).toBe(
+      0,
+    );
   });
   it('reimport is idempotent and does not replace the existing record', async () => {
     const p = await previewImport(workbook(), 'synthetic.xlsx', 'admin');
@@ -57,6 +66,9 @@ describe('Real import preview and commit on isolated database', () => {
     expect((await commitImport(p.preview_id, 'admin')).imported_rows).toBe(1);
     expect(isolated.db!.prepare('SELECT count(*) n FROM source_versions').get()!.n).toBe(3);
     expect(isolated.db!.prepare('SELECT is_closed FROM violations').get()!.is_closed).toBe(0);
+    expect(isolated.db!.prepare("SELECT count(*) n FROM tasks WHERE status='OPEN'").get()!.n).toBe(
+      1,
+    );
   });
   it('rejects arbitrary files', async () => {
     await expect(readWorkbook(Buffer.from('not a workbook'))).rejects.toThrow();

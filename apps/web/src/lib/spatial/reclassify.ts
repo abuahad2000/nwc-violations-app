@@ -50,6 +50,8 @@ export async function reclassify(userId: string) {
         )
     )
       throw new Error('تغيرت البيانات أثناء التصنيف؛ أعد المحاولة');
+    const manualRows = await db.prepare('SELECT violation_id FROM manual_responsibility').all();
+    const manualIds = new Set(manualRows.map((r) => String(r.violation_id)));
     const now = new Date().toISOString();
     const run = crypto.randomUUID();
     await db
@@ -58,6 +60,7 @@ export async function reclassify(userId: string) {
       )
       .run('cont_nwc_operations', 'إدارة الصيانة', now);
     for (const result of results) {
+      if (manualIds.has(result.id)) continue; // Preserve explicitly reviewed administrative responsibility.
       const group =
         result.classification === 'INSIDE_ACTIVE_PROJECT'
           ? 'INSIDE_PROJECT_BOUNDARY'

@@ -2,6 +2,8 @@ import crypto from 'crypto';
 import { db } from '@/lib/db/async';
 import { readWorkbook } from './workbook';
 import { findContractor } from '@/lib/domain/contractor-alias';
+import { assignInitial } from '@/lib/domain/assign-initial';
+import type { ResponsibilityProject } from '@/lib/domain/responsibility';
 
 export async function previewImport(buffer: Buffer, filename: string, userId: string) {
   const parsed = await readWorkbook(buffer);
@@ -63,6 +65,14 @@ export async function commitImport(id: string, userId: string) {
     const batchId = crypto.randomUUID();
     const now = new Date().toISOString();
     let imported = 0;
+    await db
+      .prepare(
+        'INSERT INTO contractors(id,name,is_approved,created_at) VALUES(?,?,1,?) ON CONFLICT(id) DO NOTHING',
+      )
+      .run('cont_nwc_operations', 'إدارة الصيانة', now);
+    const assignmentProjects = (await db
+      .prepare("SELECT id,name,contractor_id FROM projects WHERE status!='REVIEW'")
+      .all()) as ResponsibilityProject[];
     for (const record of data.records) {
       const old = await db
         .prepare('SELECT * FROM violations WHERE source_reference = ?')
@@ -100,7 +110,7 @@ export async function commitImport(id: string, userId: string) {
       if (old) {
         await db
           .prepare(
-            `UPDATE violations SET ${keys.map((k) => `${k} = ?`).join(', ')}, import_batch_id = ?, updated_at = ?, classification = 'UNDER_REVIEW', classification_reason = 'تغير المصدر؛ يلزم إعادة تصنيف', project_id = NULL, project_contractor_id = NULL WHERE id = ?`,
+            `UPDATE violations SET ${keys.map((k) => `${k} = ?`).join(', ')}, import_batch_id = ?, updated_at = ?, classification = 'UNDER_REVIEW', classification_reason = 'تغير المصدر؛ يلزم إعادة تصنيف', project_id = CASE WHEN EXISTS(SELECT 1 FROM manual_responsibility mr WHERE mr.violation_id=violations.id) THEN project_id ELSE NULL END, project_contractor_id = CASE WHEN EXISTS(SELECT 1 FROM manual_responsibility mr WHERE mr.violation_id=violations.id) THEN project_contractor_id ELSE NULL END WHERE id = ?`,
           )
           .run(...Object.values(values), batchId, now, violationId);
       } else {
@@ -116,6 +126,7 @@ export async function commitImport(id: string, userId: string) {
             "UPDATE tasks SET status='CLOSED_SOURCE',version=version+1 WHERE violation_id=? AND status='OPEN'",
           )
           .run(violationId);
+      await assignInitial(violationId, userId, assignmentProjects);
       imported++;
     }
     await db

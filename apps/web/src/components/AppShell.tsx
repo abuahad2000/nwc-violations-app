@@ -19,6 +19,7 @@ const links = [
   ['/dashboard', 'لوحة المتابعة', LayoutDashboard],
   ['/infographic', 'إنفوجرافيك المشاريع', LayoutDashboard],
   ['/violations', 'سجل التعديات', ClipboardList],
+  ['/assignments', 'إسناد البلاغات', ClipboardList],
   ['/map', 'الخريطة', Map],
   ['/contractors', 'المقاولون', Building2],
   ['/contractor-management', 'تعديل بيانات المقاولين', Settings],
@@ -67,7 +68,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .filter(([href]) =>
             href === '/settings' || href === '/contractor-management'
               ? user?.role === 'SUPER_ADMIN'
-              : href === '/imports'
+              : href === '/imports' || href === '/assignments'
                 ? ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(user?.role || '')
                 : user?.role === 'CONTRACTOR_USER'
                   ? !['/contractors', '/projects', '/programs', '/infographic'].includes(href)

@@ -18,6 +18,7 @@ try {
   await client.query(fs.readFileSync(path.resolve('src/lib/db/migrations/002_cloud_runtime.sql'),'utf8'));
   await client.query(fs.readFileSync(path.resolve('src/lib/db/migrations/003_project_executives.sql'),'utf8'));
   await client.query(fs.readFileSync(path.resolve('src/lib/db/migrations/004_contractor_aliases.sql'),'utf8'));
+  await client.query(fs.readFileSync(path.resolve('src/lib/db/migrations/005_manual_responsibility.sql'),'utf8'));
   const occupied = await client.query('SELECT count(*) n FROM users');
   if (Number(occupied.rows[0].n)) throw new Error('Target already contains users; migration stopped without replacing data');
   for (const table of tables) {
