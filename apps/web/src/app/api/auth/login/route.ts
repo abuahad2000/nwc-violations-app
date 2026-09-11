@@ -1,7 +1,7 @@
 import { isSameOrigin } from '@/lib/auth/origin';
 import crypto from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
-import { db, verifyPassword } from '@/lib/db';
+import { db, verifyPassword } from '@/lib/db/async';
 import { createSession } from '@/lib/auth/session';
 import { z } from 'zod';
 
@@ -27,15 +27,17 @@ export async function POST(req: NextRequest) {
     const { email, password } = parsed.data;
     const key = crypto.createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
     const now = Date.now();
-    db.prepare('DELETE FROM login_attempts WHERE expires_at < ?').run(now);
-    const attempt = db.prepare('SELECT attempts FROM login_attempts WHERE key=?').get(key);
+    await db.prepare('DELETE FROM login_attempts WHERE expires_at < ?').run(now);
+    const attempt = await db.prepare('SELECT attempts FROM login_attempts WHERE key=?').get(key);
     if (attempt && Number(attempt.attempts) >= 10)
       return NextResponse.json({ message: 'محاولات كثيرة؛ حاول بعد15 دقيقة' }, { status: 429 });
-    db.prepare(
-      'INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=attempts+1',
-    ).run(key, now + 15 * 60 * 1000);
+    await db
+      .prepare(
+        'INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=login_attempts.attempts+1',
+      )
+      .run(key, now + 15 * 60 * 1000);
 
-    const user = db
+    const user = (await db
       .prepare(
         `
       SELECT id, name, email, password_hash, salt, role, contractor_id
@@ -43,7 +45,7 @@ export async function POST(req: NextRequest) {
       WHERE lower(email) = ? OR lower(username) = ?
     `,
       )
-      .get(email.toLowerCase().trim(), email.toLowerCase().trim()) as
+      .get(email.toLowerCase().trim(), email.toLowerCase().trim())) as
       | {
           id: string;
           name: string;
@@ -70,24 +72,26 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    db.prepare('DELETE FROM login_attempts WHERE key=?').run(key);
+    await db.prepare('DELETE FROM login_attempts WHERE key=?').run(key);
     await createSession(user.id);
 
     // Audit log
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
       INSERT INTO audit_events (id, action, entity_type, entity_id, performed_by, details, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    ).run(
-      crypto.randomUUID(),
-      'USER_LOGIN',
-      'USER',
-      user.id,
-      user.id,
-      JSON.stringify({ email: user.email, role: user.role }),
-      new Date().toISOString(),
-    );
+      )
+      .run(
+        crypto.randomUUID(),
+        'USER_LOGIN',
+        'USER',
+        user.id,
+        user.id,
+        JSON.stringify({ email: user.email, role: user.role }),
+        new Date().toISOString(),
+      );
 
     return NextResponse.json({
       status: 'success',

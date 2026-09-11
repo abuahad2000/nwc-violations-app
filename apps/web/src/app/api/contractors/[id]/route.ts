@@ -1,6 +1,6 @@
 import { authorize } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -8,13 +8,13 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     if (auth.response) return auth.response;
     const { id } = await params;
 
-    const contractor = db.prepare('SELECT * FROM contractors WHERE id = ?').get(id);
+    const contractor = await db.prepare('SELECT * FROM contractors WHERE id = ?').get(id);
     if (!contractor) {
       return NextResponse.json({ status: 'error', message: 'المقاول غير موجود' }, { status: 404 });
     }
 
     // Projects belonging to this contractor
-    const projects = db
+    const projects = await db
       .prepare(
         `
       SELECT p.*, (SELECT COUNT(*) FROM current_violations WHERE project_id = p.id) as violations_in_project
@@ -25,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .all(id);
 
     // Facet A: Violations reported in their name in source
-    const reportedViolations = db
+    const reportedViolations = await db
       .prepare(
         `
       SELECT
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .all(id, contractor.name);
 
     // Facet B: Violations inside their approved project boundaries
-    const boundaryViolations = db
+    const boundaryViolations = await db
       .prepare(
         `
       SELECT
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
       .all(id);
 
     // Facet C: Actions currently assigned to this contractor
-    const assignedActions = db
+    const assignedActions = await db
       .prepare(
         `
       SELECT

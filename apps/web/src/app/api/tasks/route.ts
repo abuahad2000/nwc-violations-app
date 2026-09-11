@@ -1,7 +1,7 @@
 import { violationScope } from '@/lib/domain/filters';
 import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/auth/guard';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 import { z } from 'zod';
 import crypto from 'node:crypto';
 export async function POST(req: Request) {
@@ -20,11 +20,10 @@ export async function POST(req: Request) {
         expected_updated_at: z.string(),
       })
       .parse(await req.json());
-    if (!db.prepare('SELECT id FROM contractors WHERE id=?').get(body.owner_id))
+    if (!(await db.prepare('SELECT id FROM contractors WHERE id=?').get(body.owner_id)))
       return NextResponse.json({ message: 'الجهة غير موجودة' }, { status: 400 });
-    db.exec('BEGIN IMMEDIATE');
-    try {
-      const row = db
+    return await db.transaction(async () => {
+      const row = await db
         .prepare('SELECT current_action_owner_id,is_closed,updated_at FROM violations WHERE id=?')
         .get(body.violation_id);
       if (!row || row.is_closed) throw new Error('السجل غير موجود أو مغلق');
@@ -34,40 +33,41 @@ export async function POST(req: Request) {
       )
         throw new Error('تغير الإسناد؛ حدّث التفاصيل أولًا');
       const now = new Date().toISOString();
-      db.prepare(
-        "UPDATE tasks SET status='SUPERSEDED',version=version+1 WHERE violation_id=? AND status='OPEN'",
-      ).run(body.violation_id);
-      db.prepare(
-        "INSERT INTO tasks (id,violation_id,owner_id,reason,due_date,status,created_by,created_at) VALUES (?,?,?,?,?,'OPEN',?,?)",
-      ).run(
-        crypto.randomUUID(),
-        body.violation_id,
-        body.owner_id,
-        body.reason,
-        body.due_date,
-        auth.user.id,
-        now,
-      );
-      db.prepare('UPDATE violations SET current_action_owner_id=?,updated_at=? WHERE id=?').run(
-        body.owner_id,
-        now,
-        body.violation_id,
-      );
-      db.prepare('INSERT INTO audit_events VALUES (?,?,?,?,?,?,?)').run(
-        crypto.randomUUID(),
-        'TASK_ASSIGNED',
-        'VIOLATION',
-        body.violation_id,
-        auth.user.id,
-        JSON.stringify(body),
-        now,
-      );
-      db.exec('COMMIT');
+      await db
+        .prepare(
+          "UPDATE tasks SET status='SUPERSEDED',version=version+1 WHERE violation_id=? AND status='OPEN'",
+        )
+        .run(body.violation_id);
+      await db
+        .prepare(
+          "INSERT INTO tasks (id,violation_id,owner_id,reason,due_date,status,created_by,created_at) VALUES (?,?,?,?,?,'OPEN',?,?)",
+        )
+        .run(
+          crypto.randomUUID(),
+          body.violation_id,
+          body.owner_id,
+          body.reason,
+          body.due_date,
+          auth.user.id,
+          now,
+        );
+      await db
+        .prepare('UPDATE violations SET current_action_owner_id=?,updated_at=? WHERE id=?')
+        .run(body.owner_id, now, body.violation_id);
+      await db
+        .prepare('INSERT INTO audit_events VALUES (?,?,?,?,?,?,?)')
+        .run(
+          crypto.randomUUID(),
+          'TASK_ASSIGNED',
+          'VIOLATION',
+          body.violation_id,
+          auth.user.id,
+          JSON.stringify(body),
+          now,
+        );
+
       return NextResponse.json({ status: 'success' });
-    } catch (error) {
-      db.exec('ROLLBACK');
-      throw error;
-    }
+    });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'فشل الإسناد' },
@@ -82,19 +82,21 @@ export async function GET(req: Request) {
   const id = new URL(req.url).searchParams.get('violation_id') || '';
   const scope = violationScope(auth.user);
   if (
-    !db
+    !(await db
       .prepare(`SELECT id FROM violations v WHERE v.id=? AND ${scope.sql}`)
-      .get(id, ...scope.params)
+      .get(id, ...scope.params))
   )
     return NextResponse.json({ message: 'البلاغ غير متاح' }, { status: 404 });
   const canWrite = ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(auth.user.role);
   return NextResponse.json({
-    tasks: db
+    tasks: await db
       .prepare(
         'SELECT t.*,c.name owner_name FROM tasks t LEFT JOIN contractors c ON c.id=t.owner_id WHERE violation_id=? ORDER BY created_at DESC',
       )
       .all(id),
     can_write: canWrite,
-    contractors: canWrite ? db.prepare('SELECT id,name FROM contractors ORDER BY name').all() : [],
+    contractors: canWrite
+      ? await db.prepare('SELECT id,name FROM contractors ORDER BY name').all()
+      : [],
   });
 }

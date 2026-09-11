@@ -1,24 +1,26 @@
 import { NextResponse } from 'next/server';
 import { destroySession, getCurrentUser } from '@/lib/auth/session';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 
 export async function POST() {
   const user = await getCurrentUser();
   if (user) {
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
       INSERT INTO audit_events (id, action, entity_type, entity_id, performed_by, details, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    ).run(
-      crypto.randomUUID(),
-      'USER_LOGOUT',
-      'USER',
-      user.id,
-      user.id,
-      JSON.stringify({ email: user.email }),
-      new Date().toISOString(),
-    );
+      )
+      .run(
+        crypto.randomUUID(),
+        'USER_LOGOUT',
+        'USER',
+        user.id,
+        user.id,
+        JSON.stringify({ email: user.email }),
+        new Date().toISOString(),
+      );
   }
 
   await destroySession();

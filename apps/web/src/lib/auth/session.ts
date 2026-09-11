@@ -1,4 +1,4 @@
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 import { SessionUser, UserRole } from '@/types';
 import crypto from 'crypto';
 import { cookies } from 'next/headers';
@@ -9,12 +9,14 @@ export async function createSession(userId: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('hex');
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24 hours
 
-  db.prepare(
-    `
+  await db
+    .prepare(
+      `
     INSERT INTO sessions (token, user_id, expires_at, created_at)
     VALUES (?, ?, ?, ?)
   `,
-  ).run(token, userId, expiresAt, new Date().toISOString());
+    )
+    .run(token, userId, expiresAt, new Date().toISOString());
 
   const cookieStore = await cookies();
   cookieStore.set(SESSION_COOKIE_NAME, token, {
@@ -34,7 +36,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
     const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
     if (!token) return null;
 
-    const row = db
+    const row = (await db
       .prepare(
         `
       SELECT u.id, u.name, u.email, u.role, u.contractor_id, u.must_change_password, s.expires_at
@@ -43,7 +45,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
       WHERE s.token = ?
     `,
       )
-      .get(token) as
+      .get(token)) as
       | {
           id: string;
           name: string;
@@ -59,7 +61,7 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
 
     if (new Date(row.expires_at).getTime() < Date.now()) {
       // Session expired
-      db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+      await db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
       return null;
     }
 
@@ -80,7 +82,7 @@ export async function destroySession(): Promise<void> {
   const cookieStore = await cookies();
   const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
   if (token) {
-    db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
+    await db.prepare('DELETE FROM sessions WHERE token = ?').run(token);
     cookieStore.delete(SESSION_COOKIE_NAME);
   }
 }

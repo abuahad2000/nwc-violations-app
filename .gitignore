@@ -23,3 +23,7 @@ __pycache__/
 .DS_Store
 Thumbs.db
 .netlify/
+!apps/web/scripts/data/
+!apps/web/scripts/data/**
+!apps/web/src/app/api/reports/export/excel/
+!apps/web/src/app/api/reports/export/excel/**

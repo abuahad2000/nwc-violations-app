@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/auth/guard';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 import { commitImport, previewImport } from '@/lib/imports/service';
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -8,7 +8,7 @@ import { z } from 'zod';
 export async function GET() {
   const auth = await authorize('imports:execute');
   if (auth.response) return auth.response;
-  const data = db
+  const data = await db
     .prepare(
       'SELECT b.*, u.name AS imported_by_name FROM import_batches b LEFT JOIN users u ON b.imported_by = u.id ORDER BY b.created_at DESC LIMIT 100',
     )
@@ -32,7 +32,10 @@ export async function POST(req: Request) {
         ...(await previewImport(await fs.readFile(file), 'التعديات.xlsx', auth.user.id)),
       });
     }
-    return NextResponse.json({ status: 'success', ...commitImport(body.preview_id, auth.user.id) });
+    return NextResponse.json({
+      status: 'success',
+      ...(await commitImport(body.preview_id, auth.user.id)),
+    });
   } catch (error) {
     return NextResponse.json(
       { message: error instanceof Error ? error.message : 'فشل الاستيراد' },

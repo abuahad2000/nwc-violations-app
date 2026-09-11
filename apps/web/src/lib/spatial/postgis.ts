@@ -2,9 +2,10 @@ import { Pool } from 'pg';
 import type { PolygonGeometry, SpatialClassification } from '@/types';
 const globalPool = globalThis as unknown as { nwcPostgis?: Pool };
 export function postgis() {
-  if (!process.env.POSTGIS_URL) throw new Error('لم يتم إعداد اتصال PostGIS المحلي');
+  if (!(process.env.POSTGIS_URL || process.env.DATABASE_URL))
+    throw new Error('لم يتم إعداد اتصال PostGIS المحلي');
   return (globalPool.nwcPostgis ??= new Pool({
-    connectionString: process.env.POSTGIS_URL,
+    connectionString: process.env.POSTGIS_URL || process.env.DATABASE_URL,
     max: 3,
     connectionTimeoutMillis: 5000,
     statement_timeout: 30000,

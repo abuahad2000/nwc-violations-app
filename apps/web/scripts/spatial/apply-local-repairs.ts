@@ -4,7 +4,7 @@ import {db} from '../../src/lib/db';
 import {postgis} from '../../src/lib/spatial/postgis';
 async function main(){
  const actor='OWNER_AUTHORIZATION_20260911';
- console.log('Reference:',initializeReference(actor));
+ console.log('Reference:',await initializeReference(actor));
  // Only the explicit running-layer colors AND active workbook status qualify.
  // Conflicting statuses remain for owner decision; approximate matches are never silently accepted.
  const candidates=db.prepare("SELECT b.id,b.proposed_project_id FROM reference_candidates b JOIN projects p ON p.id=b.proposed_project_id WHERE b.color IN ('#097138','#01579b') AND p.status='ACTIVE' AND b.match_method IN ('OPERATIONAL_NUMBER','NORMALIZED_NAME') AND b.approved=0").all();

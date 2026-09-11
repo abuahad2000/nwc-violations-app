@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
 import { parseFilters, buildViolationFilter } from '@/lib/domain/filters';
 import { ZodError } from 'zod';
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       LEFT JOIN contractors c_proj ON v.project_contractor_id = c_proj.id
       WHERE ${whereSQL}
     `;
-    const totalRow = db.prepare(countQuery).get(...params) as { total: number };
+    const totalRow = (await db.prepare(countQuery).get(...params)) as { total: number };
 
     // Select page rows
     const dataQuery = `
@@ -57,7 +57,7 @@ export async function GET(req: NextRequest) {
       ORDER BY v.age_days DESC
       LIMIT ? OFFSET ?
     `;
-    const rows = db.prepare(dataQuery).all(...params, limit, offset);
+    const rows = await db.prepare(dataQuery).all(...params, limit, offset);
 
     return NextResponse.json({
       status: 'success',

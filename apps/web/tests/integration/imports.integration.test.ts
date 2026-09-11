@@ -43,18 +43,18 @@ describe('Real import preview and commit on isolated database', () => {
   it('preview does not change records; wrong owner cannot commit', async () => {
     const p = await previewImport(workbook(), 'synthetic.xlsx', 'admin');
     expect(isolated.db!.prepare('SELECT count(*) n FROM violations').get()!.n).toBe(0);
-    expect(() => commitImport(p.preview_id, 'other')).toThrow();
-    expect(commitImport(p.preview_id, 'admin').imported_rows).toBe(1);
+    await expect(commitImport(p.preview_id, 'other')).rejects.toThrow();
+    expect((await commitImport(p.preview_id, 'admin')).imported_rows).toBe(1);
   });
   it('reimport is idempotent and does not replace the existing record', async () => {
     const p = await previewImport(workbook(), 'synthetic.xlsx', 'admin');
-    expect(commitImport(p.preview_id, 'admin').duplicate).toBe(true);
+    expect((await commitImport(p.preview_id, 'admin')).duplicate).toBe(true);
     expect(isolated.db!.prepare('SELECT count(*) n FROM violations').get()!.n).toBe(1);
   });
   it('changed source is versioned before updating', async () => {
     const p = await previewImport(workbook('تحت معالجة المقاول'), 'changed.xlsx', 'admin');
     expect(p.changed).toBe(1);
-    expect(commitImport(p.preview_id, 'admin').imported_rows).toBe(1);
+    expect((await commitImport(p.preview_id, 'admin')).imported_rows).toBe(1);
     expect(isolated.db!.prepare('SELECT count(*) n FROM source_versions').get()!.n).toBe(3);
     expect(isolated.db!.prepare('SELECT is_closed FROM violations').get()!.is_closed).toBe(0);
   });

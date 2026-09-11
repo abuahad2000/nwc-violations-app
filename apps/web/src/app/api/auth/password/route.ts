@@ -1,7 +1,7 @@
 import { isSameOrigin } from '@/lib/auth/origin';
 import { NextResponse } from 'next/server';
 import { getCurrentUser, destroySession } from '@/lib/auth/session';
-import { db, hashPassword, verifyPassword } from '@/lib/db';
+import { db, hashPassword, verifyPassword } from '@/lib/db/async';
 import { z } from 'zod';
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -11,7 +11,7 @@ export async function POST(req: Request) {
     const body = z
       .object({ current: z.string().max(128), password: z.string().min(12).max(128) })
       .parse(await req.json());
-    const row = db.prepare('SELECT password_hash,salt FROM users WHERE id=?').get(user.id)!;
+    const row = (await db.prepare('SELECT password_hash,salt FROM users WHERE id=?').get(user.id))!;
     if (
       body.current === body.password ||
       !verifyPassword(body.current, String(row.password_hash), String(row.salt))
@@ -21,12 +21,10 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     const { hash, salt } = hashPassword(body.password);
-    db.prepare('UPDATE users SET password_hash=?,salt=?,must_change_password=0 WHERE id=?').run(
-      hash,
-      salt,
-      user.id,
-    );
-    db.prepare('DELETE FROM sessions WHERE user_id=?').run(user.id);
+    await db
+      .prepare('UPDATE users SET password_hash=?,salt=?,must_change_password=0 WHERE id=?')
+      .run(hash, salt, user.id);
+    await db.prepare('DELETE FROM sessions WHERE user_id=?').run(user.id);
     await destroySession();
     return NextResponse.json({ status: 'success' });
   } catch {

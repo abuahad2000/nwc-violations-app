@@ -1,6 +1,6 @@
 import { authorize } from '@/lib/auth/guard';
 import { NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 
 export async function GET() {
   try {
@@ -10,7 +10,7 @@ export async function GET() {
     // a) reported in source
     // b) inside their project boundaries
     // c) assigned action items
-    const rows = db
+    const rows = await db
       .prepare(
         `
       SELECT

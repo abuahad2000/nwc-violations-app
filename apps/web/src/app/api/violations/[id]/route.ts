@@ -1,7 +1,7 @@
 import { violationScope } from '@/lib/domain/filters';
 import { authorize } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@/lib/db';
+import { db } from '@/lib/db/async';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,7 +10,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
     const { id } = await params;
     const scope = violationScope(auth.user);
 
-    const row = db
+    const row = await db
       .prepare(
         `
       SELECT

@@ -1,6 +1,6 @@
 import { authorize } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
-import { db, hashPassword } from '@/lib/db';
+import { db, hashPassword } from '@/lib/db/async';
 import { z } from 'zod';
 import crypto from 'crypto';
 
@@ -32,11 +32,12 @@ export async function POST(req: NextRequest) {
 
     if (
       role === 'CONTRACTOR_USER' &&
-      (!contractor_id || !db.prepare('SELECT id FROM contractors WHERE id = ?').get(contractor_id))
+      (!contractor_id ||
+        !(await db.prepare('SELECT id FROM contractors WHERE id = ?').get(contractor_id)))
     )
       return NextResponse.json({ message: 'يلزم تحديد مقاول مسجل' }, { status: 400 });
     // Check if email exists
-    const existing = db
+    const existing = await db
       .prepare('SELECT id FROM users WHERE email = ?')
       .get(email.toLowerCase().trim());
     if (existing) {
@@ -49,38 +50,42 @@ export async function POST(req: NextRequest) {
     const userId = 'usr_' + crypto.randomUUID().slice(0, 8);
     const { hash, salt } = hashPassword(password);
 
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
       INSERT INTO users (id, name, email, password_hash, salt, role, contractor_id, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `,
-    ).run(
-      userId,
-      name.trim(),
-      email.toLowerCase().trim(),
-      hash,
-      salt,
-      role,
-      contractor_id || null,
-      new Date().toISOString(),
-    );
+      )
+      .run(
+        userId,
+        name.trim(),
+        email.toLowerCase().trim(),
+        hash,
+        salt,
+        role,
+        contractor_id || null,
+        new Date().toISOString(),
+      );
 
-    db.prepare('UPDATE users SET must_change_password=1 WHERE id=?').run(userId);
+    await db.prepare('UPDATE users SET must_change_password=1 WHERE id=?').run(userId);
     // Audit creation
-    db.prepare(
-      `
+    await db
+      .prepare(
+        `
       INSERT INTO audit_events (id, action, entity_type, entity_id, performed_by, details, created_at)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `,
-    ).run(
-      crypto.randomUUID(),
-      'USER_REGISTER_LOCAL',
-      'USER',
-      userId,
-      auth.user.id,
-      JSON.stringify({ email, role }),
-      new Date().toISOString(),
-    );
+      )
+      .run(
+        crypto.randomUUID(),
+        'USER_REGISTER_LOCAL',
+        'USER',
+        userId,
+        auth.user.id,
+        JSON.stringify({ email, role }),
+        new Date().toISOString(),
+      );
 
     return NextResponse.json({
       status: 'success',
