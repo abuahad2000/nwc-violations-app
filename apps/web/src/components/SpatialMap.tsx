@@ -2,6 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
+import { serviceLabels, serviceColors, type ServiceType } from '@/lib/domain/service-type';
 maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 export default function SpatialMap({
   query,
@@ -13,6 +14,8 @@ export default function SpatialMap({
   const host = useRef<HTMLDivElement>(null);
   const map = useRef<maplibregl.Map | null>(null);
   const select = useRef(onSelect);
+  const [service, setService] = useState<ServiceType | 'ALL'>('ALL');
+  const [boundaryCount, setBoundaryCount] = useState(0);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -79,6 +82,15 @@ export default function SpatialMap({
         return d as { points: FeatureCollection; boundaries: FeatureCollection };
       })
       .then((d) => {
+        if (service !== 'ALL') {
+          d.points.features = d.points.features.filter(
+            (f) => f.properties?.service_type === service,
+          );
+          d.boundaries.features = d.boundaries.features.filter(
+            (f) => f.properties?.service_type === service,
+          );
+        }
+        setBoundaryCount(d.boundaries.features.length);
         setError('');
         setCount(d.points.features.length);
         setRendered(false);
@@ -93,13 +105,40 @@ export default function SpatialMap({
           id: 'boundaries-fill',
           type: 'fill',
           source: 'boundaries',
-          paint: { 'fill-color': '#0e7c86', 'fill-opacity': 0.09 },
+          paint: {
+            'fill-color': [
+              'match',
+              ['get', 'service_type'],
+              'WATER',
+              serviceColors.WATER,
+              'SEWER',
+              serviceColors.SEWER,
+              'MIXED',
+              serviceColors.MIXED,
+              serviceColors.UNKNOWN,
+            ],
+            'fill-opacity': 0.14,
+          },
         });
         m.addLayer({
           id: 'boundaries-line',
           type: 'line',
           source: 'boundaries',
-          paint: { 'line-color': '#0e7c86', 'line-width': 1.5, 'line-dasharray': [2, 2] },
+          paint: {
+            'line-color': [
+              'match',
+              ['get', 'service_type'],
+              'WATER',
+              serviceColors.WATER,
+              'SEWER',
+              serviceColors.SEWER,
+              'MIXED',
+              serviceColors.MIXED,
+              serviceColors.UNKNOWN,
+            ],
+            'line-width': 2,
+            'line-dasharray': [2, 2],
+          },
         });
         m.addSource('points', {
           type: 'geojson',
@@ -155,15 +194,57 @@ export default function SpatialMap({
         if (e.name !== 'AbortError') setError(e.message);
       });
     return () => controller.abort();
-  }, [query, ready]);
+  }, [query, ready, service]);
   return (
     <section className="surface overflow-hidden">
       <div className="flex flex-wrap justify-between gap-2 border-b border-slate-100 p-4">
         <h3 className="font-semibold">
           التوزيع المكاني {count !== null ? `(${count} نقطة)` : '— جارٍ التحميل'}
         </h3>
-        <span className="text-sm text-slate-500">أخضر: داخل · أزرق: خارج · برتقالي: مراجعة</span>
+        <span className="text-sm text-slate-500">
+          النقاط: أخضر داخل المشروع · أزرق خارج المشروع · برتقالي مراجعة
+        </span>
       </div>
+      <div className="flex flex-wrap items-center gap-4 border-b border-slate-100 bg-slate-50 p-4">
+        <label className="flex items-center gap-2 text-sm font-medium">
+          نوع المشروع على الخريطة
+          <select
+            className="field"
+            value={service}
+            onChange={(e) => setService(e.target.value as ServiceType | 'ALL')}
+          >
+            <option value="ALL">جميع الأنواع</option>
+            {Object.entries(serviceLabels).map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div className="flex flex-wrap gap-3 text-xs" aria-label="ألوان نطاقات المشاريع">
+          {Object.entries(serviceLabels).map(([value, label]) => (
+            <span key={value} className="flex items-center gap-1.5">
+              <span
+                className="h-3 w-5 rounded-sm"
+                style={{ backgroundColor: serviceColors[value as ServiceType] }}
+              />
+              {label}
+            </span>
+          ))}
+        </div>
+        <span className="text-xs text-slate-500">{boundaryCount} نطاق معتمد ظاهر</span>
+      </div>
+      {service !== 'ALL' && (
+        <p className="px-4 pt-3 text-xs text-slate-600" role="status">
+          هذا الفلتر يخص الخريطة فقط؛ تبقى المؤشرات والجدول على فلاتر الصفحة. السجلات غير المرتبطة
+          بمشروع تظهر ضمن غير محدد / مراجعة.
+        </p>
+      )}
+      {count === 0 && (
+        <p className="px-4 pt-3 text-sm" role="status">
+          لا توجد نقاط تعديات مطابقة على الخريطة.
+        </p>
+      )}
       {error && (
         <p role="alert" className="notice-error">
           {error}

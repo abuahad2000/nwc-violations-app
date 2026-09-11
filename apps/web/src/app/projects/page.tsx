@@ -1,7 +1,14 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
-type Project = {
+import {
+  serviceLabels,
+  serviceColors,
+  serviceFromReference,
+  type ServiceInfo,
+  type ServiceType,
+} from '@/lib/domain/service-type';
+type Project = ServiceInfo & {
   id: string;
   name: string;
   operational_number: string;
@@ -21,6 +28,7 @@ type Boundary = {
   candidates_json: string;
 };
 export default function ProjectsPage() {
+  const [service, setService] = useState<ServiceType | 'ALL'>('ALL');
   const [projects, setProjects] = useState<Project[]>([]);
   const [boundaries, setBoundaries] = useState<Boundary[]>([]);
   const [canWrite, setCanWrite] = useState(false);
@@ -65,6 +73,7 @@ export default function ProjectsPage() {
       setBusy(false);
     }
   };
+  const visibleProjects = projects.filter((p) => service === 'ALL' || p.service_type === service);
   return (
     <AppShell>
       <div className="space-y-6">
@@ -102,7 +111,30 @@ export default function ProjectsPage() {
           </div>
         )}
         <section className="surface overflow-hidden">
-          <h3 className="p-4 font-semibold">المشاريع ({projects.length})</h3>
+          <div className="flex flex-wrap items-center justify-between gap-3 p-4">
+            <h3 className="font-semibold">
+              المشاريع ({visibleProjects.length} من {projects.length})
+            </h3>
+            <label className="flex items-center gap-2 text-sm">
+              نوع المشروع
+              <select
+                className="field"
+                value={service}
+                onChange={(e) => setService(e.target.value as ServiceType | 'ALL')}
+              >
+                <option value="ALL">جميع الأنواع</option>
+                {Object.entries(serviceLabels).map(([value, label]) => (
+                  <option key={value} value={value}>
+                    {label} ({projects.filter((p) => p.service_type === value).length})
+                  </option>
+                ))}
+              </select>
+            </label>
+          </div>
+          <p className="px-4 pb-4 text-xs text-slate-500">
+            النوع مستمد من ألوان النطاقات المعتمدة واسم المشروع في المرجع. الاختلافات غير المحسومة
+            تظهر للمراجعة.
+          </p>
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-start text-sm">
               <thead className="bg-slate-50">
@@ -110,6 +142,7 @@ export default function ProjectsPage() {
                   {[
                     'الرقم التشغيلي',
                     'المشروع',
+                    'نوع المشروع',
                     'المقاول',
                     'مدير المتابعة',
                     'الحالة',
@@ -122,12 +155,24 @@ export default function ProjectsPage() {
                 </tr>
               </thead>
               <tbody>
-                {projects.map((p) => (
+                {visibleProjects.map((p) => (
                   <tr className="border-t border-slate-100" key={p.id}>
                     <td className="p-3">
                       <bdi>{p.operational_number}</bdi>
                     </td>
                     <td className="max-w-80 p-3">{p.name}</td>
+                    <td className="p-3">
+                      <span
+                        title={p.service_source}
+                        className="inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-slate-50 px-3 py-1"
+                      >
+                        <span
+                          className="h-2.5 w-2.5 rounded-full"
+                          style={{ backgroundColor: serviceColors[p.service_type] }}
+                        />
+                        {serviceLabels[p.service_type]}
+                      </span>
+                    </td>
                     <td className="p-3">{p.contractor_name}</td>
                     <td className="p-3">{p.project_manager_name || 'غير محدد'}</td>
                     <td className="p-3">
@@ -174,7 +219,8 @@ export default function ProjectsPage() {
                 <div>
                   <p className="font-medium">{b.name}</p>
                   <p className="mt-1 text-xs text-slate-500">
-                    {b.source_file} ·{' '}
+                    {serviceLabels[serviceFromReference(b.color, b.source_file)]} · {b.source_file}{' '}
+                    ·{' '}
                     {b.match_method === 'OPERATIONAL_NUMBER'
                       ? 'تطابق الرقم التشغيلي'
                       : b.match_method === 'NORMALIZED_NAME'

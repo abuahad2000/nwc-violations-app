@@ -4,6 +4,7 @@ import { db } from '@/lib/db/async';
 import { initializeReference, approveBoundary } from '@/lib/spatial/reference';
 import { reclassify } from '@/lib/spatial/reclassify';
 import { z } from 'zod';
+import { projectServices } from '@/lib/spatial/service-types';
 export async function GET() {
   const auth = await authorize('projects:read');
   if (auth.response) return auth.response;
@@ -26,8 +27,11 @@ export async function GET() {
         )
         .all()
     : [];
+  const services = await projectServices(
+    projects.map((p) => ({ id: String(p.id), name: String(p.name) })),
+  );
   return NextResponse.json({
-    projects,
+    projects: projects.map((p) => ({ ...p, ...services.get(String(p.id)) })),
     boundaries,
     can_write: ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(auth.user.role),
   });
