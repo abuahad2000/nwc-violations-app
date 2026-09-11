@@ -119,9 +119,7 @@ export default function ReportsPage() {
               <h1 className="text-xl font-black text-slate-900">
                 شركة المياه الوطنية — وحدة أعمال الرياض
               </h1>
-              <p className="text-xs text-slate-600">
-                منظومة «نطاق» لحوكمة تعديات البنية التحتية والمقاولين
-              </p>
+              <p className="text-xs text-slate-600">التعديات لإدارة المشاريع الرأسمالية</p>
             </div>
             <div className="text-left text-xs font-mono">
               <div>تاريخ التقرير: {new Date().toLocaleDateString('ar-SA')}</div>

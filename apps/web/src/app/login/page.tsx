@@ -32,7 +32,9 @@ export default function LoginPage() {
       >
         <ShieldCheck className="text-teal-700" size={36} />
         <div>
-          <h2 className="text-2xl font-bold">مرحبًا بك في نطاق</h2>
+          <h2 className="text-2xl font-bold leading-relaxed">
+            مرحبًا بك في التعديات لإدارة المشاريع الرأسمالية
+          </h2>
           <p className="mt-2 text-slate-500">سجّل الدخول لمتابعة التعديات والإجراءات.</p>
         </div>
         <label className="block">

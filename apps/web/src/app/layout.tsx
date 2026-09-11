@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import '@fontsource-variable/noto-sans-arabic';
 import './globals.css';
 export const metadata: Metadata = {
-  title: 'نطاق | متابعة التعديات',
-  description: 'متابعة التعديات والمشاريع والإجراءات',
+  title: 'التعديات لإدارة المشاريع الرأسمالية',
+  description: 'متابعة التعديات والمشاريع والإجراءات لإدارة المشاريع الرأسمالية',
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,11 +11,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <header className="border-b border-slate-200 bg-white px-4 py-4">
           <div className="mx-auto flex max-w-[1600px] items-center gap-3">
-            <span className="grid h-11 w-11 place-items-center rounded-2xl bg-brand-900 text-xl font-bold text-white">
-              ن
+            <span
+              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-900 text-xl font-bold text-white"
+              aria-hidden="true"
+            >
+              ت
             </span>
             <div>
-              <h1 className="font-bold">نطاق</h1>
+              <h1 className="text-sm font-bold leading-7 sm:text-base">
+                التعديات لإدارة المشاريع الرأسمالية
+              </h1>
               <p className="text-sm text-slate-500">متابعة التعديات والمشاريع</p>
             </div>
             <span className="ms-auto hidden text-sm text-slate-500 sm:block">
