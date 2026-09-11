@@ -1,3 +1,4 @@
+import { violationManagerNameSQL } from '@/lib/domain/manager';
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
@@ -23,7 +24,7 @@ export async function GET(req: NextRequest) {
         c_proj.name as "مقاول المشروع المكاني المعتمد",
         p.name as "اسم المشروع المكاني",
         p.operational_number as "الرقم التشغيلي للمشروع",
-        p.project_manager_name as "مدير المشروع للمتابعة",
+        ${violationManagerNameSQL} as "مدير المشروع للمتابعة",
         p.executive_director_name as "المدير التنفيذي",
         p.subprogram_name as "الإدارة / البرنامج الفرعي",
         ${programNameSQL} as "مدير البرنامج",

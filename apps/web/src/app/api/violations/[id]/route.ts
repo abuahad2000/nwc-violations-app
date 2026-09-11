@@ -1,3 +1,4 @@
+import { violationManagerNameSQL } from '@/lib/domain/manager';
 import { violationScope } from '@/lib/domain/filters';
 import { authorize } from '@/lib/auth/guard';
 import { NextRequest, NextResponse } from 'next/server';
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ id: 
         p.operational_number as project_op_number,
         p.scope_description as project_scope,
         p.program_manager_name,
-        p.project_manager_name,
+        ${violationManagerNameSQL} as project_manager_name,
         c_proj.name as project_contractor_name,
         c_rep.name as canonical_reported_contractor_name
       FROM current_violations v

@@ -1,7 +1,11 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
+import * as Dialog from '@radix-ui/react-dialog';
 type Row = {
+  current_action_owner_id: string | null;
+  project_manager_name: string | null;
+  manager_override: string | null;
   id: string;
   source_reference: string;
   source_status: string;
@@ -49,6 +53,11 @@ export default function Assignments() {
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState<Row | null>(null);
+  const [managerMode, setManagerMode] = useState('CUSTOM');
+  const [managerName, setManagerName] = useState('');
+  const [managerReason, setManagerReason] = useState('');
+  const [managerError, setManagerError] = useState('');
   useEffect(() => {
     const controller = new AbortController();
     fetch('/api/assignments?' + new URLSearchParams(filters), { signal: controller.signal })
@@ -74,6 +83,144 @@ export default function Assignments() {
   const project = data?.projects.find((p) => p.id === projectId);
   return (
     <AppShell>
+      <Dialog.Root
+        open={!!editing}
+        onOpenChange={(open) => {
+          if (!open && !busy) setEditing(null);
+        }}
+      >
+        <Dialog.Portal>
+          <Dialog.Overlay className="fixed inset-0 z-50 bg-slate-900/50" />
+          <Dialog.Content
+            dir="rtl"
+            className="fixed left-1/2 top-1/2 z-50 max-h-[90vh] w-[calc(100%_-_2rem)] max-w-lg -translate-x-1/2 -translate-y-1/2 overflow-auto rounded-2xl bg-white p-6 shadow-xl"
+          >
+            <Dialog.Title className="text-xl font-bold">
+              تعديل متابعة البلاغ {editing?.source_reference}
+            </Dialog.Title>
+            <Dialog.Description className="my-3 text-slate-600">
+              التعديل خاص بهذا البلاغ، ولا يغيّر مدير المشروع في بقية البلاغات.
+            </Dialog.Description>
+            <form
+              className="space-y-4"
+              onSubmit={async (e) => {
+                e.preventDefault();
+                if (!editing) return;
+                setBusy(true);
+                setManagerError('');
+                try {
+                  const maintenance = managerMode === 'MAINTENANCE';
+                  const res = await fetch('/api/assignments', {
+                    method: maintenance ? 'POST' : 'PATCH',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(
+                      maintenance
+                        ? {
+                            records: [{ id: editing.id, updated_at: editing.updated_at }],
+                            destination: 'MAINTENANCE',
+                            reason: managerReason,
+                          }
+                        : {
+                            id: editing.id,
+                            updated_at: editing.updated_at,
+                            manager_name: managerMode === 'INHERIT' ? '' : managerName,
+                            reason: managerReason,
+                          },
+                    ),
+                  });
+                  const result = await res.json();
+                  if (!res.ok) throw Error(result.message);
+                  setMessage(result.message);
+                  setEditing(null);
+                  setSelected([]);
+                  setLoading(true);
+                  setRevision((r) => r + 1);
+                } catch (e) {
+                  setManagerError(e instanceof Error ? e.message : 'تعذر الحفظ');
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <label className="block">
+                نوع التعديل
+                <select
+                  aria-label="نوع التعديل"
+                  className="form-control field"
+                  disabled={busy}
+                  value={managerMode}
+                  onChange={(e) => setManagerMode(e.target.value)}
+                >
+                  <option
+                    value="CUSTOM"
+                    disabled={editing?.current_action_owner_id === 'cont_nwc_operations'}
+                  >
+                    مدير مختلف لهذا البلاغ
+                  </option>
+                  <option value="INHERIT">استخدام المدير الأصلي للمشروع</option>
+                  <option value="MAINTENANCE">تحويل إلى الصيانة</option>
+                </select>
+              </label>
+              {managerMode === 'CUSTOM' && (
+                <label className="block">
+                  مدير هذا البلاغ
+                  <input
+                    aria-label="مدير هذا البلاغ"
+                    list="project-manager-names"
+                    className="form-control field"
+                    required
+                    maxLength={200}
+                    disabled={busy}
+                    value={managerName}
+                    onChange={(e) => setManagerName(e.target.value)}
+                  />
+                </label>
+              )}
+              <datalist id="project-manager-names">
+                {[
+                  ...new Set(data?.projects.map((p) => p.project_manager_name).filter(Boolean)),
+                ].map((name) => (
+                  <option key={name} value={name!} />
+                ))}
+              </datalist>
+              {managerMode === 'MAINTENANCE' && (
+                <p className="rounded-xl bg-blue-50 p-3">
+                  ستصبح الصيانة الجهة المسؤولة عن البلاغ، مع حفظ مقاول المصدر. يمكنك ربطه بمشروع
+                  لاحقًا من صفحة الإسناد.
+                </p>
+              )}
+              <label className="block">
+                سبب تعديل المتابعة
+                <input
+                  aria-label="سبب تعديل المتابعة"
+                  className="form-control field"
+                  required
+                  minLength={5}
+                  maxLength={1000}
+                  disabled={busy}
+                  value={managerReason}
+                  onChange={(e) => setManagerReason(e.target.value)}
+                />
+              </label>
+              {managerError && (
+                <p role="alert" className="notice-error">
+                  {managerError}
+                </p>
+              )}
+              <div className="flex gap-3">
+                <button className="btn primary" disabled={busy}>
+                  حفظ تعديل البلاغ
+                </button>
+                <Dialog.Close asChild>
+                  <button type="button" className="btn secondary" disabled={busy}>
+                    إلغاء
+                  </button>
+                </Dialog.Close>
+              </div>
+            </form>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
       <div className="space-y-5">
         <header className="rounded-2xl bg-[#182433] p-6 text-white">
           <h2 className="text-2xl font-bold text-white">إسناد البلاغات وتحديد المشروع</h2>
@@ -310,6 +457,7 @@ export default function Assignments() {
                         'البلاغ / الحالة',
                         'المقاول في المصدر',
                         'المشروع والجهة الحالية',
+                        'مدير المشروع / المتابعة',
                         'الموقع',
                       ].map((h) => (
                         <th key={h}>{h}</th>
@@ -342,6 +490,27 @@ export default function Assignments() {
                         <td>
                           {r.project_name || 'مشروع غير محدد'}
                           <p>{r.owner_name || 'بلا جهة'}</p>
+                        </td>
+                        <td>
+                          <p>{r.project_manager_name || 'غير محدد'}</p>
+                          {r.manager_override && <small>تحديد خاص بالبلاغ</small>}
+                          <button
+                            className="btn secondary mt-2"
+                            disabled={busy || loading}
+                            onClick={() => {
+                              setEditing(r);
+                              setManagerName(r.manager_override || r.project_manager_name || '');
+                              setManagerMode(
+                                r.current_action_owner_id === 'cont_nwc_operations'
+                                  ? 'MAINTENANCE'
+                                  : 'CUSTOM',
+                              );
+                              setManagerReason('');
+                              setManagerError('');
+                            }}
+                          >
+                            تعديل متابعة البلاغ {r.source_reference}
+                          </button>
                         </td>
                         <td>
                           {r.district_raw}

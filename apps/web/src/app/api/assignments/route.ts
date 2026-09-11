@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'node:crypto';
 import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
+import { violationManagerNameSQL } from '@/lib/domain/manager';
 const querySchema = z.object({
   contractor: z.string().max(100).default(''),
   search: z.string().trim().max(200).default(''),
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
       .get(...args);
     const rows = await db
       .prepare(
-        `SELECT v.id,v.current_action_owner_id,(SELECT name FROM contractors WHERE id=v.current_action_owner_id) owner_name,v.source_reference,v.is_closed,v.source_status,v.updated_at,v.project_id,v.latitude,v.longitude,v.district_raw,v.reported_contractor_id,COALESCE(c.name,v.reported_contractor_name) contractor_name,p.name project_name FROM violations v LEFT JOIN contractors c ON c.id=v.reported_contractor_id LEFT JOIN projects p ON p.id=v.project_id WHERE ${where} ORDER BY v.source_reference LIMIT 50 OFFSET ?`,
+        `SELECT v.id,v.current_action_owner_id,${violationManagerNameSQL} project_manager_name,(SELECT manager_name FROM violation_manager_overrides WHERE violation_id=v.id) manager_override,(SELECT name FROM contractors WHERE id=v.current_action_owner_id) owner_name,v.source_reference,v.is_closed,v.source_status,v.updated_at,v.project_id,v.latitude,v.longitude,v.district_raw,v.reported_contractor_id,COALESCE(c.name,v.reported_contractor_name) contractor_name,p.name project_name FROM violations v LEFT JOIN contractors c ON c.id=v.reported_contractor_id LEFT JOIN projects p ON p.id=v.project_id WHERE ${where} ORDER BY v.source_reference LIMIT 50 OFFSET ?`,
       )
       .all(...args, (f.page - 1) * 50);
     const projects = await db
@@ -103,6 +104,10 @@ export async function POST(req: Request) {
           )
           .run(item.id, project?.id ?? null, owner, body.reason, auth.user.id, now);
         const sameProject = project && old.project_id === project.id;
+        if (!sameProject)
+          await db
+            .prepare('DELETE FROM violation_manager_overrides WHERE violation_id=?')
+            .run(item.id);
         await db
           .prepare(
             'UPDATE violations SET project_id=?,project_contractor_id=?,current_action_owner_id=?,classification=?,classification_reason=?,updated_at=? WHERE id=?',
@@ -151,6 +156,77 @@ export async function POST(req: Request) {
               : 'تعذر الإسناد',
       },
       { status: 400 },
+    );
+  }
+}
+
+const managerSchema = z.object({
+  id: z.string().min(1).max(100),
+  updated_at: z.string().max(50),
+  manager_name: z.string().trim().max(200),
+  reason: z.string().trim().min(5).max(1000),
+});
+export async function PATCH(req: Request) {
+  const auth = await authorize('projects:write', req);
+  if (auth.response) return auth.response;
+  try {
+    const input = managerSchema.parse(await req.json());
+    if (['الصيانة', 'الصيانه', 'إدارة الصيانة', 'ادارة الصيانة'].includes(input.manager_name))
+      return NextResponse.json(
+        { message: 'اختر تحويل إلى الصيانة لتحديث الجهة المسؤولة أيضًا' },
+        { status: 400 },
+      );
+    await db.transaction(async () => {
+      const old = await db.prepare('SELECT * FROM violations WHERE id=?').get(input.id);
+      if (!old || old.updated_at !== input.updated_at) throw Error('STALE');
+      if (old.current_action_owner_id === 'cont_nwc_operations' && input.manager_name)
+        throw Error('MAINTENANCE');
+      const before = await db
+        .prepare('SELECT manager_name FROM violation_manager_overrides WHERE violation_id=?')
+        .get(input.id);
+      const now = new Date().toISOString();
+      if (input.manager_name)
+        await db
+          .prepare(
+            'INSERT INTO violation_manager_overrides(violation_id,manager_name,updated_by,updated_at) VALUES(?,?,?,?) ON CONFLICT(violation_id) DO UPDATE SET manager_name=excluded.manager_name,updated_by=excluded.updated_by,updated_at=excluded.updated_at',
+          )
+          .run(input.id, input.manager_name, auth.user.id, now);
+      else
+        await db
+          .prepare('DELETE FROM violation_manager_overrides WHERE violation_id=?')
+          .run(input.id);
+      await db.prepare('UPDATE violations SET updated_at=? WHERE id=?').run(now, input.id);
+      await db
+        .prepare(
+          'INSERT INTO audit_events(id,action,entity_type,entity_id,performed_by,details,created_at) VALUES(?,?,?,?,?,?,?)',
+        )
+        .run(
+          randomUUID(),
+          'VIOLATION_MANAGER_CHANGED',
+          'VIOLATION',
+          input.id,
+          auth.user.id,
+          JSON.stringify({
+            before: before?.manager_name ?? null,
+            after: input.manager_name || null,
+            reason: input.reason,
+          }),
+          now,
+        );
+    });
+    return NextResponse.json({ message: 'تم تحديث مدير هذا البلاغ فقط' });
+  } catch (e) {
+    const code = e instanceof Error ? e.message : '';
+    return NextResponse.json(
+      {
+        message:
+          code === 'STALE'
+            ? 'تغير البلاغ؛ حدّث القائمة وأعد المحاولة'
+            : code === 'MAINTENANCE'
+              ? 'البلاغ تابع للصيانة؛ حدد المشروع الصحيح أولًا'
+              : 'تعذر التعديل؛ تحقق من الاسم وسبب التغيير',
+      },
+      { status: code === 'STALE' ? 409 : 400 },
     );
   }
 }

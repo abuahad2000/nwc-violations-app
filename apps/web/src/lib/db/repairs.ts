@@ -14,6 +14,9 @@ export function applyRepairs(db: DatabaseSync) {
   `);
     const columns = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
     db.exec(
+      'CREATE TABLE IF NOT EXISTS violation_manager_overrides(violation_id TEXT PRIMARY KEY REFERENCES violations(id),manager_name TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL);',
+    );
+    db.exec(
       'CREATE TABLE IF NOT EXISTS manual_responsibility(violation_id TEXT PRIMARY KEY REFERENCES violations(id),project_id TEXT,owner_id TEXT NOT NULL,reason TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL);',
     );
     db.exec(

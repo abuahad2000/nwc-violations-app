@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
 import { parseFilters, buildViolationFilter } from '@/lib/domain/filters';
-import { managerKeySQL, summarizeManagers } from '@/lib/domain/manager';
+import { managerKeySQL, violationManagerKeySQL, violationManagerNameSQL, summarizeManagers } from '@/lib/domain/manager';
 export async function GET(req: Request) {
   const auth = await authorize('violations:read');
   if (auth.response) return auth.response;
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       .all(...params);
     const groups = (await db
       .prepare(
-        `SELECT ${managerKeySQL} key,min(trim(p.project_manager_name)) name,v.source_status status,count(*) count,sum(v.is_closed) closed ${from} GROUP BY ${managerKeySQL},v.source_status`,
+        `SELECT ${violationManagerKeySQL} key,min(${violationManagerNameSQL}) name,v.source_status status,count(*) count,sum(v.is_closed) closed ${from} GROUP BY ${violationManagerKeySQL},v.source_status`,
       )
       .all(...params)) as {
       key: string;

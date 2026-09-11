@@ -2,6 +2,12 @@
 const name = "trim(COALESCE(p.project_manager_name,''))";
 const withoutTitle = `trim(CASE WHEN substr(${name},1,2) IN ('م.','م/','م ') THEN substr(${name},3) ELSE ${name} END)`;
 export const managerKeySQL = `replace(replace(replace(replace(replace(${withoutTitle},'أ','ا'),'إ','ا'),'آ','ا'),'ى','ي'),'  ',' ')`;
+export const violationManagerNameSQL =
+  "CASE WHEN v.current_action_owner_id='cont_nwc_operations' THEN 'إدارة الصيانة' ELSE COALESCE((SELECT mo.manager_name FROM violation_manager_overrides mo WHERE mo.violation_id=v.id),p.project_manager_name,'') END";
+export const violationManagerKeySQL = managerKeySQL.replaceAll(
+  'p.project_manager_name',
+  `(${violationManagerNameSQL})`,
+);
 const programBaseKeySQL = managerKeySQL.replaceAll(
   'p.project_manager_name',
   'p.program_manager_name',
