@@ -1,12 +1,23 @@
 'use client';
 import { useEffect, useState } from 'react';
 import AppShell from '@/components/AppShell';
-type User = { id: string; name: string; email: string; role: string };
+import { Sheet } from '@/components/ui/sheet';
+type User = {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  username: string | null;
+  delete_reason: string;
+  active_sessions: number;
+  activity: number;
+};
 export default function SettingsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [allowed, setAllowed] = useState(false);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [deleting, setDeleting] = useState<User | null>(null);
   const load = async () => {
     const r = await fetch('/api/users');
     const d = await r.json();
@@ -24,7 +35,13 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold">إدارة الحسابات</h2>
+        <header className="dashboard-hero">
+          <p className="mb-2 text-sm text-cyan-100">إعدادات مساحة العمل</p>
+          <h2 className="text-2xl font-bold">إدارة الحسابات</h2>
+          <p className="mt-3 text-sm text-slate-200">
+            إنشاء الحسابات ومراجعة استخدامها وإزالة الحسابات غير المستخدمة.
+          </p>
+        </header>
         {message && (
           <p className="surface p-4" role="status">
             {message}
@@ -92,15 +109,89 @@ export default function SettingsPage() {
             <section className="surface divide-y divide-slate-100 p-6">
               {users.map((u) => (
                 <div key={u.id} className="flex flex-wrap justify-between gap-3 py-4">
-                  <span>{u.name}</span>
+                  <div>
+                    <span className="font-bold">{u.name}</span>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {u.username || 'دخول بالبريد'} ·{' '}
+                      {u.active_sessions ? 'جلسة سارية' : 'لا توجد جلسة سارية'}
+                    </p>
+                  </div>
                   <bdi className="text-sm">{u.email}</bdi>
-                  <span className="text-sm">{u.role}</span>
+                  <span className="text-sm">
+                    {(
+                      {
+                        SUPER_ADMIN: 'مدير النظام',
+                        PROGRAM_MANAGER: 'مدير برنامج',
+                        PROJECT_MANAGER: 'مدير مشروع',
+                        READER: 'قارئ',
+                        EDITOR: 'محرر',
+                        CONTRACTOR_USER: 'مقاول',
+                      } as Record<string, string>
+                    )[u.role] || u.role}
+                  </span>
+                  <div className="max-w-64">
+                    <button
+                      className="secondary text-rose-700"
+                      disabled={busy || !!u.delete_reason}
+                      onClick={() => setDeleting(u)}
+                      aria-label={`حذف حساب ${u.name}`}
+                    >
+                      حذف الحساب
+                    </button>
+                    <p className="mt-2 text-xs text-slate-500">
+                      {u.delete_reason || 'لا توجد جلسة سارية أو إجراءات مسجلة؛ قابل للحذف'}
+                    </p>
+                  </div>
                 </div>
               ))}
             </section>
           </>
         )}
       </div>
+      <Sheet
+        open={!!deleting}
+        onOpenChange={(open) => {
+          if (!open && !busy) setDeleting(null);
+        }}
+        title="حذف حساب غير مستخدم"
+      >
+        <p className="leading-8">
+          سيتم حذف حساب <strong>{deleting?.name}</strong> (<bdi>{deleting?.email}</bdi>) وبيانات
+          دخوله. ستُسجّل العملية في سجل التدقيق.
+        </p>
+        <div className="mt-6 flex gap-3">
+          <button
+            disabled={busy}
+            className="primary bg-rose-700 hover:bg-rose-800"
+            onClick={async () => {
+              if (!deleting) return;
+              setBusy(true);
+              try {
+                const r = await fetch('/api/users', {
+                  method: 'DELETE',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ id: deleting.id }),
+                });
+                const d = await r.json();
+                if (!r.ok) throw new Error(d.message);
+                setMessage(d.message);
+                setDeleting(null);
+                await load();
+              } catch (e) {
+                setMessage(e instanceof Error ? e.message : 'تعذر حذف الحساب');
+                setDeleting(null);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            {busy ? 'جارٍ الحذف…' : 'تأكيد حذف الحساب'}
+          </button>
+          <button className="secondary" disabled={busy} onClick={() => setDeleting(null)}>
+            إلغاء
+          </button>
+        </div>
+      </Sheet>
     </AppShell>
   );
 }

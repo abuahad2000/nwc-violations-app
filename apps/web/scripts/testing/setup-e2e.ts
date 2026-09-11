@@ -54,3 +54,6 @@ db.prepare(
   "INSERT OR REPLACE INTO users (id,name,email,username,password_hash,salt,role,created_at,must_change_password) VALUES ('e2e_alias','مدير اختبار','alias@example.test','qa_admin',?,?,'SUPER_ADMIN',?,0)",
 ).run(shortLogin.hash, shortLogin.salt, now);
 console.log('Synthetic E2E fixture ready');
+db.prepare(
+  "UPDATE projects SET program_manager_name='م. مدير برنامج تجريبي' WHERE id='e2e-project'",
+).run();

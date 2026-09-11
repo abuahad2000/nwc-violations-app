@@ -2,6 +2,10 @@
 const name = "trim(COALESCE(p.project_manager_name,''))";
 const withoutTitle = `trim(CASE WHEN substr(${name},1,2) IN ('م.','م/','م ') THEN substr(${name},3) ELSE ${name} END)`;
 export const managerKeySQL = `replace(replace(replace(replace(replace(${withoutTitle},'أ','ا'),'إ','ا'),'آ','ا'),'ى','ي'),'  ',' ')`;
+export const programKeySQL = managerKeySQL.replaceAll(
+  'p.project_manager_name',
+  'p.program_manager_name',
+);
 
 export type ManagerSummary = {
   key: string;

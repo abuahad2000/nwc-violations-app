@@ -23,6 +23,7 @@ const links = [
   ['/projects', 'مرجع المشاريع', Building2],
   ['/imports', 'الاستيراد', Upload],
   ['/reports', 'التقارير', FileSpreadsheet],
+  ['/programs', 'مديرو البرامج', Building2],
   ['/settings', 'إدارة الحسابات', Settings],
 ] as const;
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -66,7 +67,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               : href === '/imports'
                 ? ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(user?.role || '')
                 : user?.role === 'CONTRACTOR_USER'
-                  ? !['/contractors', '/projects'].includes(href)
+                  ? !['/contractors', '/projects', '/programs'].includes(href)
                   : true,
           )
           .map(([href, label, Icon]) => (
@@ -75,7 +76,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               href={href}
               onClick={() => setOpen(false)}
               aria-current={pathname === href ? 'page' : undefined}
-              className={`flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold ${pathname === href ? 'bg-brand-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+              className={`flex min-h-12 items-center gap-3 rounded-xl px-3 py-3 text-sm font-semibold ${pathname === href ? 'bg-gradient-to-l from-cyan-700 to-brand-900 text-white shadow-md' : 'text-slate-600 hover:bg-slate-100'}`}
             >
               <Icon size={20} />
               {label}
@@ -109,11 +110,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   return (
     <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:gap-6">
-      <button className="secondary self-start lg:hidden" onClick={() => setOpen(true)}>
+      <button className="secondary self-start lg:hidden print:hidden" onClick={() => setOpen(true)}>
         <Menu size={20} />
         القائمة
       </button>
-      <aside className="surface sticky top-4 hidden h-[calc(100vh-130px)] w-60 shrink-0 p-4 lg:block">
+      <aside className="surface app-navigation sticky top-4 hidden h-[calc(100vh-130px)] w-60 shrink-0 p-4 lg:block">
         {navigation}
       </aside>
       <Sheet open={open} onOpenChange={setOpen} title="القائمة">

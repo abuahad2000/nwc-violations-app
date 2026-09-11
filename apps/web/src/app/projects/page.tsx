@@ -14,6 +14,7 @@ type Project = ServiceInfo & {
   operational_number: string;
   contractor_name: string;
   project_manager_name: string;
+  program_manager_name: string;
   status: string;
   approved_boundaries: number;
 };
@@ -145,6 +146,7 @@ export default function ProjectsPage() {
                     'نوع المشروع',
                     'المقاول',
                     'مدير المتابعة',
+                    'مدير البرنامج',
                     'الحالة',
                     'النطاقات المعتمدة',
                   ].map((h) => (
@@ -175,6 +177,9 @@ export default function ProjectsPage() {
                     </td>
                     <td className="p-3">{p.contractor_name}</td>
                     <td className="p-3">{p.project_manager_name || 'غير محدد'}</td>
+                    <td className="p-3 font-medium text-cyan-800">
+                      {p.program_manager_name || 'غير محدد'}
+                    </td>
                     <td className="p-3">
                       {p.status === 'ACTIVE'
                         ? 'جارٍ'

@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { SessionUser } from '@/types';
-import { managerKeySQL } from './manager';
+import { managerKeySQL, programKeySQL } from './manager';
 
 export const FilterSchema = z.object({
   search: z.string().trim().max(200).default(''),
@@ -13,6 +13,7 @@ export const FilterSchema = z.object({
   action_owner: z.string().trim().max(100).default(''),
   project_id: z.string().trim().max(100).default(''),
   manager: z.string().trim().max(200).default(''),
+  program_manager: z.string().trim().max(200).default(''),
   source_status: z.string().trim().max(200).default(''),
   open: z.enum(['', '1', '0']).default(''),
   page: z.coerce.number().int().min(1).max(1000000).default(1),
@@ -32,6 +33,12 @@ export function buildViolationFilter(f: Filters, user: SessionUser) {
   const scope = violationScope(user);
   const clauses = [scope.sql];
   const params: string[] = [...scope.params];
+  if (f.program_manager) {
+    clauses.push(
+      f.program_manager === '__unassigned__' ? `${programKeySQL} = ''` : `${programKeySQL} = ?`,
+    );
+    if (f.program_manager !== '__unassigned__') params.push(f.program_manager);
+  }
   if (f.manager) {
     clauses.push(f.manager === '__unassigned__' ? `${managerKeySQL} = ''` : `${managerKeySQL} = ?`);
     if (f.manager !== '__unassigned__') params.push(f.manager);

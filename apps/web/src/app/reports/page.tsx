@@ -70,6 +70,13 @@ export default function ReportsPage() {
             {error}
           </p>
         )}
+        <a href="/programs" className="dashboard-hero block print:hidden">
+          <p className="mb-2 text-sm text-cyan-100">جديد · متابعة البرامج</p>
+          <h2 className="font-bold">تقارير مديري البرامج</h2>
+          <p className="mt-3 text-sm text-slate-200">
+            تقارير تفصيلية ورسوم بيانية وبلاغات معلقة وصيغة بريد جاهزة لكل مدير برنامج ←
+          </p>
+        </a>
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-200 pb-4 print:hidden">
           <div>
@@ -118,7 +125,7 @@ export default function ReportsPage() {
             </div>
             <div className="text-left text-xs font-mono">
               <div>تاريخ التقرير: {new Date().toLocaleDateString('ar-SA')}</div>
-              <div>المصدر: قاعدة بيانات محلية معتمدة</div>
+              <div>المصدر: بيانات النظام ومرجع المشاريع</div>
             </div>
           </div>
         </div>
