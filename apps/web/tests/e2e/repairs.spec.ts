@@ -71,10 +71,10 @@ test('card filter, reset, accessible details and mobile width', async ({ page })
   await expect(page.getByRole('heading', { name: /التوزيع المكاني.*نقطة/ })).toBeVisible();
   await page.locator('[data-map-ready]').scrollIntoViewIfNeeded();
   await expect(page.locator('[data-map-ready]')).toHaveAttribute('data-map-ready', 'true');
-  await page.getByLabel('نوع المشروع على الخريطة').selectOption('WATER');
+  await page.getByRole('tab', {name:'مياه',exact:true}).click();
   await expect(page.getByRole('heading', { name: /التوزيع المكاني.*0 نقطة/ })).toBeVisible();
   await expect(page.getByRole('button', { name: 'test-outside', exact: true })).toBeVisible();
-  await page.getByLabel('نوع المشروع على الخريطة').selectOption('ALL');
+  await page.getByRole('tab', {name:'الكل',exact:true}).click();
   await expect(page.getByRole('heading', { name: /التوزيع المكاني.*4 نقطة/ })).toBeVisible();
   await expect(
     page.getByRole('heading', { name: 'متابعة مديري المشاريع', exact: true }),

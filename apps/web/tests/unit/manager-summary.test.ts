@@ -26,6 +26,6 @@ describe('manager source status accounting', () => {
     expect(
       result.managers[0].processing + result.managers[0].other + result.managers[0].closed,
     ).toBe(18);
-    expect(result.managers[1].total).toBe(0);
+    expect(result.managers).toHaveLength(1);
   });
 });

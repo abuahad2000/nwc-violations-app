@@ -66,7 +66,7 @@ export default function ProjectInfographic() {
       <div className="grid grid-cols-2 gap-4 xl:grid-cols-4">
         {[
           {
-            label: 'المشاريع في المرجع',
+            label: 'المشاريع التي لديها بلاغات',
             value: data.projects.length,
             icon: Building2,
             color: 'text-blue-700 bg-blue-50',
@@ -125,7 +125,7 @@ export default function ProjectInfographic() {
           <p className="text-center text-sm">من إجمالي {number(data.summary.total)} بلاغ</p>
         </section>
         <section className="card surface p-6 lg:col-span-2">
-          <h3 className="text-xl font-bold">توزيع المشاريع في المرجع</h3>
+          <h3 className="text-xl font-bold">توزيع المشاريع التي لديها بلاغات</h3>
           <div className="mt-6 space-y-5">
             {[
               ['ACTIVE', 'مشاريع جارية', '#206bc4'],

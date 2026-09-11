@@ -22,7 +22,7 @@ export default function ProgramDashboardChart({
   onSelect,
 }: {
   query: string;
-  onSelect: (program: string, manager: string) => void;
+  onSelect: (program: string, manager: string, executive: string) => void;
 }) {
   const [result, setResult] = useState<{
     query: string;
@@ -66,7 +66,7 @@ export default function ProgramDashboardChart({
           تقرير مدراء البرامج والبلاغات
         </h3>
         <p className="mt-2 text-slate-200">
-          المدير التنفيذي{data.executive ? `: ${data.executive}` : ' · متابعة البرامج'}
+          التسلسل الإداري حسب ملف المقاولين · الجهات التي لديها بلاغات فقط
         </p>
         <div className="mt-4 flex flex-wrap gap-6">
           <span>
@@ -95,53 +95,76 @@ export default function ProgramDashboardChart({
             بقية البلاغات غير المغلقة
           </span>
         </div>
-        <div className="max-h-[620px] space-y-3 overflow-y-auto pe-1">
-          {data.programs.map((p) => (
-            <details key={p.key} className="rounded-xl border border-slate-200 bg-white p-4">
-              <summary className="cursor-pointer space-y-3">
-                <span className="font-bold text-slate-800">{p.name}</span>
-                <Counts counts={p} />
-                <span
-                  role="img"
-                  aria-label={`${p.name}: ${p.pending} معلّق، منها ${p.contractor} تحت معالجة المقاول`}
-                  className="block h-4 overflow-hidden rounded-full bg-slate-100"
-                >
-                  <span className="flex h-full" style={{ width: `${(p.pending / max) * 100}%` }}>
-                    <span
-                      className="h-full bg-teal-600"
-                      style={{ width: `${p.pending ? (p.contractor / p.pending) * 100 : 0}%` }}
-                    />
-                    <span className="h-full flex-1 bg-amber-400" />
-                  </span>
-                </span>
-              </summary>
-              <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
-                <button className="btn secondary" onClick={() => onSelect(p.key, '')}>
-                  عرض بلاغات البرنامج على الخريطة
-                </button>
-                {p.managers.map((m) => (
-                  <div key={m.key} className="rounded-lg bg-slate-50 p-3">
-                    <p className="mb-2 font-semibold">مدير المشروع: {m.name}</p>
-                    <Counts counts={m} />
-                    {m.key && (
-                      <button
-                        className="mt-2 text-sm text-blue-700 underline"
-                        onClick={() => onSelect(p.key, m.key)}
+        <div className="space-y-4">
+          {data.executives
+            .filter((e) => e.assigned.total > 0)
+            .map((e) => (
+              <section
+                key={e.key}
+                className="space-y-3 rounded-2xl border border-blue-200 bg-blue-50/40 p-4"
+              >
+                <header className="space-y-2">
+                  <h4 className="text-xl font-bold text-blue-900">المدير التنفيذي: {e.name}</h4>
+                  <p className="text-sm text-slate-600">{e.categories.join(' · ')}</p>
+                  <Counts counts={e.assigned} />
+                </header>
+                {e.programs.map((p) => (
+                  <details key={p.key} className="rounded-xl border border-slate-200 bg-white p-4">
+                    <summary className="cursor-pointer space-y-3">
+                      <span className="font-bold text-slate-800">{p.name}</span>
+                      <Counts counts={p} />
+                      <span
+                        role="img"
+                        aria-label={`${p.name}: ${p.pending} معلّق، منها ${p.contractor} تحت معالجة المقاول`}
+                        className="block h-4 overflow-hidden rounded-full bg-slate-100"
                       >
-                        عرض البلاغات على الخريطة
+                        <span
+                          className="flex h-full"
+                          style={{ width: `${(p.pending / max) * 100}%` }}
+                        >
+                          <span
+                            className="h-full bg-teal-600"
+                            style={{
+                              width: `${p.pending ? (p.contractor / p.pending) * 100 : 0}%`,
+                            }}
+                          />
+                          <span className="h-full flex-1 bg-amber-400" />
+                        </span>
+                      </span>
+                    </summary>
+                    <div className="mt-4 space-y-3 border-t border-slate-100 pt-4">
+                      <button className="btn secondary" onClick={() => onSelect(p.key, '', e.key)}>
+                        عرض بلاغات البرنامج على الخريطة
                       </button>
-                    )}
-                  </div>
+                      {p.managers.map((m) => (
+                        <div key={m.key} className="rounded-lg bg-slate-50 p-3">
+                          <p className="mb-2 font-semibold">مدير المشروع: {m.name}</p>
+                          <Counts counts={m} />
+                          {m.key && (
+                            <button
+                              className="mt-2 text-sm text-blue-700 underline"
+                              onClick={() => onSelect(p.key, m.key, e.key)}
+                            >
+                              عرض البلاغات على الخريطة
+                            </button>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </details>
                 ))}
-              </div>
-            </details>
-          ))}
+              </section>
+            ))}
         </div>
         {!data.programs.length && <p>لا توجد برامج مطابقة للفلاتر.</p>}
-        <aside className="rounded-xl bg-amber-50 p-4 text-amber-900">
-          <p className="mb-2 font-semibold">بلاغات بلا مدير برنامج مرتبط — لم تُنسب إلى أي مدير</p>
-          <Counts counts={data.unassigned} />
-        </aside>
+        {data.unassigned.total > 0 && (
+          <aside className="rounded-xl bg-amber-50 p-4 text-amber-900">
+            <p className="mb-2 font-semibold">
+              بلاغات بلا مدير برنامج مرتبط — لم تُنسب إلى أي مدير
+            </p>
+            <Counts counts={data.unassigned} />
+          </aside>
+        )}
       </div>
     </section>
   );

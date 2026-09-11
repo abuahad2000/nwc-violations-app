@@ -46,7 +46,7 @@ export default function ReportsPage() {
       fetch('/api/dashboard/stats').then((r) => r.json()),
     ])
       .then(([cData, sData]) => {
-        if (cData.status === 'success') setContractors(cData.data);
+        if (cData.status === 'success') setContractors(cData.data.filter((c: ContractorRow) => c.reported_violations_count > 0 || c.boundary_violations_count > 0 || c.assigned_actions_count > 0));
         if (sData.status === 'success') setStats(sData.data);
         else setError(sData.message || 'تعذر جلب الإحصاءات');
         setLoading(false);

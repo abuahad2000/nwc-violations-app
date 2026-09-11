@@ -13,7 +13,7 @@ export async function GET() {
         .get();
       const projects = await db
         .prepare(
-          `SELECT p.id,p.name,p.status,p.operational_number,c.name contractor_name,(SELECT count(*) FROM current_violations v WHERE v.project_id=p.id) total,(SELECT count(*) FROM current_violations v WHERE v.project_id=p.id AND v.is_closed=0) pending FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' ORDER BY pending DESC,p.name`,
+          `SELECT p.id,p.name,p.status,p.operational_number,c.name contractor_name,(SELECT count(*) FROM current_violations v WHERE v.project_id=p.id) total,(SELECT count(*) FROM current_violations v WHERE v.project_id=p.id AND v.is_closed=0) pending FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' AND EXISTS(SELECT 1 FROM current_violations v WHERE v.project_id=p.id) ORDER BY pending DESC,p.name`,
         )
         .all();
       const contractors = await db

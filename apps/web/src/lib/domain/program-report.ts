@@ -108,9 +108,13 @@ export function buildProgramReports(projects: ProgramProject[], rows: ProgramVio
     m.statuses.sort((a, b) => b.count - a.count);
   }
   return {
-    managers: [...managers.values()].sort(
-      (a, b) => b.open - a.open || a.name.localeCompare(b.name, 'ar'),
-    ),
+    managers: [...managers.values()]
+      .filter((m) => m.total > 0)
+      .map((m) => ({
+        ...m,
+        projects: m.projects.filter((p) => rows.some((r) => r.project_id === p.id)),
+      }))
+      .sort((a, b) => b.open - a.open || a.name.localeCompare(b.name, 'ar')),
     unassigned,
     unassigned_projects: projects.filter((p) => !p.program_key).length,
     unassigned_open: unassignedOpen,

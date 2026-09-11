@@ -70,9 +70,9 @@ export function summarizeManagers(
     managers.set(row.key, m);
   }
   return {
-    managers: [...managers.values()].sort(
-      (a, b) => b.total - a.total || a.name.localeCompare(b.name, 'ar'),
-    ),
+    managers: [...managers.values()]
+      .filter((m) => m.total > 0)
+      .sort((a, b) => b.total - a.total || a.name.localeCompare(b.name, 'ar')),
     unassigned,
   };
 }

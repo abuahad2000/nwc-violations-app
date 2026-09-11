@@ -49,6 +49,7 @@ const labels: Record<string, string> = {
   UNDER_REVIEW: 'تحتاج مراجعة',
 };
 const initial = {
+  executive: '',
   program_manager: '',
   manager: '',
   source_status: '',
@@ -308,17 +309,26 @@ export default function ViolationExplorer({
             </button>
           </p>
         )}
-        {(filters.program_manager || filters.manager || filters.source_status) && (
+        {(filters.executive ||
+          filters.program_manager ||
+          filters.manager ||
+          filters.source_status) && (
           <div className="flex flex-wrap items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-900">
             <span>
-              تصفية الشارت: {filters.program_manager}{' '}
+              تصفية الشارت: {filters.executive} {filters.program_manager}{' '}
               {filters.manager === '__unassigned__' ? 'بلا مدير مرتبط' : filters.manager}{' '}
               {filters.source_status}
             </span>
             <button
               className="btn secondary"
               onClick={() =>
-                apply({ ...filters, program_manager: '', manager: '', source_status: '' })
+                apply({
+                  ...filters,
+                  executive: '',
+                  program_manager: '',
+                  manager: '',
+                  source_status: '',
+                })
               }
             >
               إزالة تصفية الشارت
@@ -342,7 +352,9 @@ export default function ViolationExplorer({
         {mode === 'dashboard' && (
           <ProgramDashboardChart
             query={query}
-            onSelect={(program_manager, manager) => apply({ ...filters, program_manager, manager })}
+            onSelect={(program_manager, manager, executive) =>
+              apply({ ...filters, program_manager, manager, executive })
+            }
           />
         )}
         {mode !== 'list' && <SpatialMap query={query} onSelect={details} />}

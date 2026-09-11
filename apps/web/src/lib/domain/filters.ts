@@ -3,6 +3,7 @@ import type { SessionUser } from '@/types';
 import { managerKeySQL, programKeySQL } from './manager';
 
 export const FilterSchema = z.object({
+  executive: z.string().trim().max(200).default(''),
   search: z.string().trim().max(200).default(''),
   classification: z
     .enum(['', 'INSIDE_PROJECT_BOUNDARY', 'OUTSIDE_PROJECT_BOUNDARY', 'UNDER_REVIEW'])
@@ -33,6 +34,10 @@ export function buildViolationFilter(f: Filters, user: SessionUser) {
   const scope = violationScope(user);
   const clauses = [scope.sql];
   const params: string[] = [...scope.params];
+  if (f.executive) {
+    clauses.push("COALESCE(p.executive_director_name,'') = ?");
+    params.push(f.executive === '__unassigned__' ? '' : f.executive);
+  }
   if (f.program_manager) {
     clauses.push(
       f.program_manager === '__unassigned__' ? `${programKeySQL} = ''` : `${programKeySQL} = ?`,

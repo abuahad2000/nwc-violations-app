@@ -1,5 +1,7 @@
 'use client';
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import ProgramDashboardChart from './ProgramDashboardChart';
 import {
   Download,
   Mail,
@@ -58,6 +60,7 @@ function Bars({ title, rows }: { title: string; rows: { name: string; count: num
   );
 }
 export default function ProgramReports() {
+  const router = useRouter();
   const [data, setData] = useState<ReportData | null>(null);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState('');
@@ -108,6 +111,12 @@ export default function ProgramReports() {
     );
   return (
     <div className="space-y-6 program-report">
+      <ProgramDashboardChart
+        query=""
+        onSelect={(program_manager, manager, executive) =>
+          router.push(`/dashboard?${new URLSearchParams({ program_manager, manager, executive })}`)
+        }
+      />
       <header className="dashboard-hero relative overflow-hidden">
         <div className="mb-3 flex items-center gap-2 text-sm text-cyan-100">
           <BriefcaseBusiness size={18} /> المتابعة التنفيذية / البرامج

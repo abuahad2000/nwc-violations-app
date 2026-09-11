@@ -13,6 +13,11 @@ export function applyRepairs(db: DatabaseSync) {
     CREATE TABLE IF NOT EXISTS system_settings (key TEXT PRIMARY KEY, value TEXT NOT NULL);
   `);
     const columns = db.prepare('PRAGMA table_info(users)').all() as { name: string }[];
+    const projectColumns = db.prepare('PRAGMA table_info(projects)').all() as { name: string }[];
+    for (const field of ['executive_director_name', 'subprogram_name']) {
+      if (!projectColumns.some((c) => c.name === field))
+        db.exec(`ALTER TABLE projects ADD COLUMN ${field} TEXT`);
+    }
     if (!columns.some((c) => c.name === 'username')) {
       db.exec(
         'ALTER TABLE users ADD COLUMN username TEXT; CREATE UNIQUE INDEX users_username ON users(username COLLATE NOCASE) WHERE username IS NOT NULL;',

@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     );
     const rows = await db
       .prepare(
-        `SELECT v.id,v.source_reference,v.latitude,v.longitude,v.classification,p.id project_id,p.name project_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c_proj ON c_proj.id=v.project_contractor_id WHERE ${whereSQL} AND v.latitude BETWEEN 15 AND 32 AND v.longitude BETWEEN 34 AND 56 ORDER BY v.id LIMIT 10001`,
+        `SELECT v.id,v.source_reference,v.source_status,v.is_closed,v.latitude,v.longitude,v.classification,p.id project_id,p.name project_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c_proj ON c_proj.id=v.project_contractor_id WHERE ${whereSQL} AND v.latitude BETWEEN 15 AND 32 AND v.longitude BETWEEN 34 AND 56 ORDER BY v.id LIMIT 10001`,
       )
       .all(...params);
     if (rows.length > 10000)
@@ -40,6 +40,9 @@ export async function GET(req: Request) {
           properties: {
             id: r.id,
             reference: r.source_reference,
+            source_status: r.source_status,
+            is_closed: r.is_closed,
+            project_name: r.project_name,
             classification: r.classification,
             service_type: services.get(String(r.project_id))?.service_type || 'UNKNOWN',
           },
