@@ -1,0 +1,15 @@
+import {DatabaseSync,backup} from 'node:sqlite';
+import path from 'node:path';
+import fs from 'node:fs/promises';
+const dbPath=path.resolve(process.env.NWC_DATA_DIR||'data','nwc_local.db');
+const directory=path.resolve('../../backups',`nwc-${new Date().toISOString().replace(/[:.]/g,'-')}`);
+await fs.mkdir(directory,{recursive:true});
+const db=new DatabaseSync(dbPath,{readOnly:true});
+await backup(db,path.join(directory,'nwc_local.db'));db.close();
+const restored=new DatabaseSync(path.join(directory,'nwc_local.db'),{readOnly:true});
+const integrity=restored.prepare('PRAGMA integrity_check').get();
+if(integrity.integrity_check!=='ok')throw new Error('Backup integrity check failed');
+const records=restored.prepare('SELECT count(*) n FROM violations').get().n;
+restored.close();
+await fs.writeFile(path.join(directory,'verification.json'),JSON.stringify({integrity:'ok',violations:Number(records),created_at:new Date().toISOString()},null,2));
+console.log(`Backup saved: ${directory}`);

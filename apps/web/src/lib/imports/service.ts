@@ -1,0 +1,134 @@
+import crypto from 'crypto';
+import { db } from '@/lib/db';
+import { readWorkbook } from './workbook';
+
+export async function previewImport(buffer: Buffer, filename: string, userId: string) {
+  const parsed = await readWorkbook(buffer);
+  const existing = db
+    .prepare("SELECT id FROM import_batches WHERE file_hash = ? AND status = 'COMPLETED'")
+    .get(parsed.file_hash);
+  let added = 0;
+  let changed = 0;
+  let unchanged = 0;
+  for (const record of parsed.records) {
+    const old = db
+      .prepare('SELECT * FROM violations WHERE source_reference = ?')
+      .get(record.normalized.source_reference);
+    if (!old) added++;
+    else if (Object.entries(record.normalized).some(([key, value]) => old[key] !== value))
+      changed++;
+    else unchanged++;
+  }
+  const id = crypto.randomUUID();
+  db.prepare('DELETE FROM import_previews WHERE expires_at < ?').run(new Date().toISOString());
+  db.prepare('INSERT INTO import_previews VALUES (?, ?, ?, ?, ?, ?)').run(
+    id,
+    userId,
+    filename,
+    parsed.file_hash,
+    JSON.stringify(parsed),
+    new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+  );
+  return {
+    preview_id: id,
+    filename,
+    file_hash: parsed.file_hash,
+    total_rows: parsed.records.length,
+    added,
+    changed,
+    unchanged,
+    is_duplicate: Boolean(existing),
+    sample_rows: parsed.records.slice(0, 5).map((r) => r.normalized),
+    detected_columns: Object.keys(parsed.records[0].raw),
+  };
+}
+export function commitImport(id: string, userId: string) {
+  db.exec('BEGIN IMMEDIATE');
+  try {
+    const preview = db
+      .prepare('SELECT * FROM import_previews WHERE id = ? AND user_id = ? AND expires_at > ?')
+      .get(id, userId, new Date().toISOString());
+    if (!preview) throw new Error('المعاينة منتهية أو غير متاحة لهذا المستخدم؛ أعد المعاينة');
+    const duplicate = db
+      .prepare("SELECT id FROM import_batches WHERE file_hash = ? AND status = 'COMPLETED'")
+      .get(preview.file_hash);
+    if (duplicate) {
+      db.exec('ROLLBACK');
+      return { duplicate: true, batch_id: duplicate.id, imported_rows: 0 };
+    }
+    const data = JSON.parse(String(preview.payload)) as Awaited<ReturnType<typeof readWorkbook>>;
+    const batchId = crypto.randomUUID();
+    const now = new Date().toISOString();
+    let imported = 0;
+    for (const record of data.records) {
+      const old = db
+        .prepare('SELECT * FROM violations WHERE source_reference = ?')
+        .get(record.normalized.source_reference);
+      if (old && !Object.entries(record.normalized).some(([key, value]) => old[key] !== value))
+        continue;
+      const violationId = old
+        ? String(old.id)
+        : `viol_${crypto
+            .createHash('sha256')
+            .update('municipal:' + record.normalized.source_reference)
+            .digest('hex')
+            .slice(0, 24)}`;
+      if (old)
+        db.prepare('INSERT INTO source_versions VALUES (?, ?, ?, ?, ?)').run(
+          crypto.randomUUID(),
+          violationId,
+          old.import_batch_id,
+          JSON.stringify(old),
+          now,
+        );
+      db.prepare('INSERT INTO source_versions VALUES (?, ?, ?, ?, ?)').run(
+        crypto.randomUUID(),
+        violationId,
+        batchId,
+        JSON.stringify({ sheet: data.sheet, row: record.row, raw: record.raw }),
+        now,
+      );
+      const values = record.normalized;
+      const keys = Object.keys(values);
+      if (old) {
+        db.prepare(
+          `UPDATE violations SET ${keys.map((k) => `${k} = ?`).join(', ')}, import_batch_id = ?, updated_at = ?, classification = 'UNDER_REVIEW', classification_reason = 'تغير المصدر؛ يلزم إعادة تصنيف', project_id = NULL, project_contractor_id = NULL WHERE id = ?`,
+        ).run(...Object.values(values), batchId, now, violationId);
+      } else {
+        db.prepare(
+          `INSERT INTO violations (id, ${keys.join(',')}, classification, classification_reason, import_batch_id, created_at, updated_at) VALUES (?, ${keys.map(() => '?').join(',')}, 'UNDER_REVIEW', 'بانتظار التصنيف المكاني المعتمد', ?, ?, ?)`,
+        ).run(violationId, ...Object.values(values), batchId, now, now);
+      }
+      if (values.is_closed)
+        db.prepare(
+          "UPDATE tasks SET status='CLOSED_SOURCE',version=version+1 WHERE violation_id=? AND status='OPEN'",
+        ).run(violationId);
+      imported++;
+    }
+    db.prepare('INSERT INTO import_batches VALUES (?, ?, ?, ?, ?, ?, ?, ?)').run(
+      batchId,
+      preview.filename,
+      preview.file_hash,
+      data.records.length,
+      imported,
+      'COMPLETED',
+      userId,
+      now,
+    );
+    db.prepare('INSERT INTO audit_events VALUES (?, ?, ?, ?, ?, ?, ?)').run(
+      crypto.randomUUID(),
+      'IMPORT_COMMITTED',
+      'IMPORT',
+      batchId,
+      userId,
+      JSON.stringify({ imported, total: data.records.length }),
+      now,
+    );
+    db.prepare('DELETE FROM import_previews WHERE id = ?').run(id);
+    db.exec('COMMIT');
+    return { duplicate: false, batch_id: batchId, imported_rows: imported };
+  } catch (error) {
+    db.exec('ROLLBACK');
+    throw error;
+  }
+}

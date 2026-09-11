@@ -1,28 +1,24 @@
-# Logs & Temporary Files
-*.log
-npm-debug.log*
-yarn-debug.log*
-
-# Python
+node_modules/
+.next/
+*.tsbuildinfo
+.env*
+!.env.example
+backups/
+data/
+excel/
+kmz/
+*.db
+*.db-*
+*.sqlite*
+*.xlsx
+*.xls
+*.kmz
+test-results/
+playwright-report/
+coverage/
+apps/web/public/maplibre/
 __pycache__/
-*.py[cod]
-*$py.class
 *.pyc
-venv/
-.venv/
-env/
-
-# Operating System Files
+*.log
 .DS_Store
 Thumbs.db
-desktop.ini
-
-# IDE & Editor Settings
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# Temporary scratch & tools scripts
-scratch/
-tools_*.py

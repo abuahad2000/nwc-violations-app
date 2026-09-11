@@ -1,0 +1,91 @@
+@import 'tailwindcss';
+@import 'maplibre-gl/dist/maplibre-gl.css';
+@theme {
+  --font-sans: 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
+  --color-brand-600: #0e7c86;
+  --color-brand-900: #0f2744;
+}
+:root {
+  color-scheme: light;
+}
+html,
+body {
+  margin: 0;
+  background: #f5f7fa;
+  color: #0f2744;
+  font-family: var(--font-sans);
+  font-size: 15px;
+}
+* {
+  box-sizing: border-box;
+}
+button,
+a,
+input,
+select {
+  touch-action: manipulation;
+}
+button:not(:disabled),
+select {
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+:focus-visible {
+  outline: 3px solid #0e7c86;
+  outline-offset: 3px;
+}
+@layer components {
+  .dashboard-hero {
+    @apply rounded-3xl px-6 py-7 text-white shadow-lg;
+    background:
+      radial-gradient(ellipse at top left, #137984 0%, transparent 62%),
+      linear-gradient(120deg, #153b58, #0f2744);
+  }
+  .dashboard-hero h2 {
+    @apply text-3xl;
+  }
+  .dashboard-hero .secondary { color: #0f2744; }
+  .dashboard-hero .text-slate-500 {
+    color: #c6d9e6;
+  }
+  .metric-card::before {
+    content: '';
+    position: absolute;
+    inset-inline-start: 0;
+    top: 20%;
+    height: 60%;
+    width: 3px;
+    background: #0e7c86;
+    border-radius: 4px;
+  }
+  .surface {
+    @apply rounded-2xl border border-slate-200 bg-white shadow-sm;
+  }
+  .field {
+    @apply w-full min-w-0 rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm;
+  }
+  .primary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-brand-600 px-4 py-2 font-semibold text-white hover:bg-teal-800 disabled:opacity-50;
+  }
+  .secondary {
+    @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm hover:bg-slate-50;
+  }
+  .notice-error {
+    @apply rounded-xl border border-red-200 bg-red-50 p-4 text-red-800;
+  }
+  .label {
+    @apply mb-2 block text-sm font-medium text-slate-600;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "name": "nwc-violations-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "NWC encroachment monitoring dashboard",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "setup": "npm --prefix apps/web ci",
+    "dev": "npm --prefix apps/web run dev -- --hostname 127.0.0.1",
+    "build": "npm --prefix apps/web run build",
+    "start": "npm --prefix apps/web run start:local",
+    "lint": "npm --prefix apps/web run lint",
+    "test": "npm --prefix apps/web run test",
+    "backup": "npm --prefix apps/web run backup"
+  }
+}
