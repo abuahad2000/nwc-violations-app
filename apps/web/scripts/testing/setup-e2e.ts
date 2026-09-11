@@ -1,6 +1,6 @@
 import path from 'node:path';
 import fs from 'node:fs';
-import { db, hashPassword } from '../src/lib/db';
+import { db, hashPassword } from '../../src/lib/db';
 const target = path.resolve(process.env.NWC_DATA_DIR || '');
 if (!target.endsWith('nwc-repair-e2e'))
   throw new Error('E2E setup requires isolated nwc-repair-e2e directory');

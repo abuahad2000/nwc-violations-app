@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { summarizeManagers } from '../src/lib/domain/manager';
+import { summarizeManagers } from '../../src/lib/domain/manager';
 describe('manager source status accounting', () => {
   it('counts processing without double-counting contractor; keeps unassigned separate', () => {
     const result = summarizeManagers(

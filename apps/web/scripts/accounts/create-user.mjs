@@ -11,7 +11,7 @@ const args = process.argv.slice(2);
 if (args.length < 4) {
   console.log(`
 استخدام سكربت إنشاء مستخدم محلي آمن:
-node scripts/create-user.mjs <name> <email> <password> <role> [contractor_id]
+node scripts/accounts/create-user.mjs <name> <email> <password> <role> [contractor_id]
 
 الأدوار المتاحة (Roles):
 - SUPER_ADMIN

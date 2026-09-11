@@ -13,6 +13,9 @@
     "start": "npm --prefix apps/web run start:local",
     "lint": "npm --prefix apps/web run lint",
     "test": "npm --prefix apps/web run test",
-    "backup": "npm --prefix apps/web run backup"
+    "backup": "npm --prefix apps/web run backup",
+    "typecheck": "npm --prefix apps/web run typecheck",
+    "admin:init": "npm --prefix apps/web run admin:init",
+    "test:e2e": "npm --prefix apps/web run test:e2e"
   }
 }

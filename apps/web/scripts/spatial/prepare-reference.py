@@ -4,7 +4,7 @@ import json, re, zipfile, hashlib, difflib, html
 import xml.etree.ElementTree as ET
 import openpyxl
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[4]
 NS = {'k': 'http://www.opengis.net/kml/2.2'}
 OP = r'\d{2}/\d{2}/\d/\d{2}/\d{4}/\d'
 def normalized(value):

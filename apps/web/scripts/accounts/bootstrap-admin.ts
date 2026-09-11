@@ -1,4 +1,4 @@
-import { db, hashPassword } from '../src/lib/db';
+import { db, hashPassword } from '../../src/lib/db';
 import crypto from 'node:crypto';
 const username = process.env.NWC_ADMIN_USERNAME || 'admin';
 const password = process.env.NWC_ADMIN_PASSWORD;

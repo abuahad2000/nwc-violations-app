@@ -13,7 +13,7 @@ it('bootstraps an empty private database once and refuses to replace accounts', 
     NWC_ADMIN_PASSWORD: 'Synthetic-Bootstrap-Test-2026',
   };
   const invoke = () =>
-    spawnSync(process.execPath, ['--import', 'tsx', 'scripts/bootstrap-admin.ts'], {
+    spawnSync(process.execPath, ['--import', 'tsx', 'scripts/accounts/bootstrap-admin.ts'], {
       env,
       encoding: 'utf8',
       timeout: 15000,
