@@ -7,5 +7,7 @@
 [build.environment]
   NODE_VERSION = "24"
 
-# Netlify automatically installs its supported Next.js adapter.
-# Do not add a static SPA fallback: this application uses server routes.
+# This existing site was configured as a static site. Explicitly enable the
+# Next.js adapter so server routes and public assets are deployed correctly.
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
