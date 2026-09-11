@@ -2,10 +2,20 @@
 const name = "trim(COALESCE(p.project_manager_name,''))";
 const withoutTitle = `trim(CASE WHEN substr(${name},1,2) IN ('م.','م/','م ') THEN substr(${name},3) ELSE ${name} END)`;
 export const managerKeySQL = `replace(replace(replace(replace(replace(${withoutTitle},'أ','ا'),'إ','ا'),'آ','ا'),'ى','ي'),'  ',' ')`;
-export const programKeySQL = managerKeySQL.replaceAll(
+const programBaseKeySQL = managerKeySQL.replaceAll(
   'p.project_manager_name',
   'p.program_manager_name',
 );
+// These two identity matches were explicitly confirmed by the project owner on 2026-09-12.
+export const programKeySQL = `CASE ${programBaseKeySQL}
+ WHEN 'تركي الاسمري' THEN 'تركي ظافر الاسمري'
+ WHEN 'تركي ظافر يحيي الاسمري' THEN 'تركي ظافر الاسمري'
+ WHEN 'عبدالله العنزي' THEN 'عبدالله علي العنزي'
+ ELSE ${programBaseKeySQL} END`;
+export const programNameSQL = `CASE ${programKeySQL}
+ WHEN 'تركي ظافر الاسمري' THEN 'تركي ظافر الاسمري'
+ WHEN 'عبدالله علي العنزي' THEN 'عبدالله علي العنزي'
+ ELSE trim(COALESCE(p.program_manager_name,'')) END`;
 
 export type ManagerSummary = {
   key: string;

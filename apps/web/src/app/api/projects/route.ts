@@ -5,12 +5,13 @@ import { initializeReference, approveBoundary } from '@/lib/spatial/reference';
 import { reclassify } from '@/lib/spatial/reclassify';
 import { z } from 'zod';
 import { projectServices } from '@/lib/spatial/service-types';
+import { programNameSQL } from '@/lib/domain/manager';
 export async function GET() {
   const auth = await authorize('projects:read');
   if (auth.response) return auth.response;
   const projects = await db
     .prepare(
-      "SELECT p.*,c.name contractor_name,(SELECT count(*) FROM project_boundaries b WHERE b.project_id=p.id AND b.is_approved=1) approved_boundaries FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' ORDER BY p.status,p.name",
+      `SELECT p.*,${programNameSQL} program_manager_name,c.name contractor_name,(SELECT count(*) FROM project_boundaries b WHERE b.project_id=p.id AND b.is_approved=1) approved_boundaries FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' ORDER BY p.status,p.name`,
     )
     .all();
   const initialized = await db

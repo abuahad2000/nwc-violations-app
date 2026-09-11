@@ -3,6 +3,7 @@ import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
 import { parseFilters, buildViolationFilter } from '@/lib/domain/filters';
 import { ZodError } from 'zod';
+import { programNameSQL } from '@/lib/domain/manager';
 import * as XLSX from 'xlsx';
 
 export async function GET(req: NextRequest) {
@@ -22,7 +23,7 @@ export async function GET(req: NextRequest) {
         p.name as "اسم المشروع المكاني",
         p.operational_number as "الرقم التشغيلي للمشروع",
         p.project_manager_name as "مدير المشروع للمتابعة",
-        p.program_manager_name as "مدير البرنامج",
+        ${programNameSQL} as "مدير البرنامج",
         (SELECT name FROM contractors WHERE id=v.current_action_owner_id) as "مسؤول الإجراء الحالي",
         CASE 
           WHEN v.classification = 'INSIDE_PROJECT_BOUNDARY' THEN 'داخل نطاق مشروع معتمد'

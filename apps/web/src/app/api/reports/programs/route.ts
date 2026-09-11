@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { authorize } from '@/lib/auth/guard';
 import { db } from '@/lib/db/async';
-import { programKeySQL } from '@/lib/domain/manager';
+import { programKeySQL, programNameSQL } from '@/lib/domain/manager';
 import {
   buildProgramReports,
   type ProgramProject,
@@ -14,12 +14,12 @@ export async function GET() {
     const result = await db.transaction(async () => {
       const projects = (await db
         .prepare(
-          `SELECT p.id,p.name,p.operational_number,p.status,p.project_manager_name,p.program_manager_name,${programKeySQL} program_key,c.name contractor_name FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' ORDER BY p.name`,
+          `SELECT p.id,p.name,p.operational_number,p.status,p.project_manager_name,${programNameSQL} program_manager_name,${programKeySQL} program_key,c.name contractor_name FROM projects p LEFT JOIN contractors c ON c.id=p.contractor_id WHERE p.status!='REVIEW' ORDER BY p.name`,
         )
         .all()) as ProgramProject[];
       const rows = (await db
         .prepare(
-          `SELECT v.id,v.source_reference,v.project_id,v.source_status,v.is_closed,v.age_days,v.district_raw,v.reported_date,p.name project_name,p.project_manager_name,p.program_manager_name,${programKeySQL} program_key,c.name contractor_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c ON c.id=p.contractor_id ORDER BY v.id LIMIT 10001`,
+          `SELECT v.id,v.source_reference,v.project_id,v.source_status,v.is_closed,v.age_days,v.district_raw,v.reported_date,p.name project_name,p.project_manager_name,${programNameSQL} program_manager_name,${programKeySQL} program_key,c.name contractor_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c ON c.id=p.contractor_id ORDER BY v.id LIMIT 10001`,
         )
         .all()) as ProgramViolation[];
       if (rows.length > 10000) throw new Error('REPORT_LIMIT');

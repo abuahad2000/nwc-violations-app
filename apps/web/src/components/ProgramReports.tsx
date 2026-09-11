@@ -137,8 +137,8 @@ export default function ProgramReports() {
       </aside>
       {data.unassigned_projects > 0 && (
         <p className="text-sm text-slate-600">
-          يوجد {number(data.unassigned_projects)} مشروعًا في المرجع بلا اسم مدير برنامج. الأسماء
-          المعروضة مطابقة للمرجع؛ اختلاف الاسم المختصر عن الكامل يبقى منفصلًا حتى اعتماد المطابقة.
+          يوجد {number(data.unassigned_projects)} مشروعًا في المرجع بلا اسم مدير برنامج. الأسماء من
+          المرجع مع تطبيق المطابقات المعتمدة؛ تبقى اختلافات الأسماء الأخرى منفصلة حتى اعتمادها.
         </p>
       )}
       <section className="surface p-5 print:hidden">
