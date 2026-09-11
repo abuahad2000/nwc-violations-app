@@ -4,7 +4,7 @@ import { authorize } from '@/lib/auth/guard';
 import { parseFilters, buildViolationFilter } from '@/lib/domain/filters';
 import { ZodError } from 'zod';
 import { programNameSQL } from '@/lib/domain/manager';
-import * as XLSX from 'xlsx';
+import { exportViolationsWorkbook } from '@/lib/reports/excel';
 
 export async function GET(req: NextRequest) {
   try {
@@ -23,6 +23,8 @@ export async function GET(req: NextRequest) {
         p.name as "اسم المشروع المكاني",
         p.operational_number as "الرقم التشغيلي للمشروع",
         p.project_manager_name as "مدير المشروع للمتابعة",
+        p.executive_director_name as "المدير التنفيذي",
+        p.subprogram_name as "الإدارة / البرنامج الفرعي",
         ${programNameSQL} as "مدير البرنامج",
         (SELECT name FROM contractors WHERE id=v.current_action_owner_id) as "مسؤول الإجراء الحالي",
         CASE 
@@ -51,21 +53,7 @@ export async function GET(req: NextRequest) {
       )
       .all(...params);
 
-    // Create Excel Workbook
-    const worksheet = XLSX.utils.json_to_sheet(
-      rows.map((row) =>
-        Object.fromEntries(
-          Object.entries(row).map(([key, value]) => [
-            key,
-            typeof value === 'string' && /^[=+@\-\t\r]/.test(value) ? "'" + value : value,
-          ]),
-        ),
-      ),
-    );
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, 'تقرير التعديات والمقاولين');
-
-    const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+    const buffer = await exportViolationsWorkbook(rows);
 
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
     const filename = `NWC_Violations_Report_${timestamp}.xlsx`;

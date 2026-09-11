@@ -21,6 +21,7 @@ const links = [
   ['/violations', 'سجل التعديات', ClipboardList],
   ['/map', 'الخريطة', Map],
   ['/contractors', 'المقاولون', Building2],
+  ['/contractor-management', 'تعديل بيانات المقاولين', Settings],
   ['/projects', 'مرجع المشاريع', Building2],
   ['/imports', 'الاستيراد', Upload],
   ['/reports', 'التقارير', FileSpreadsheet],
@@ -64,7 +65,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <nav aria-label="القائمة الرئيسية" className="nav flex-column space-y-1">
         {links
           .filter(([href]) =>
-            href === '/settings'
+            href === '/settings' || href === '/contractor-management'
               ? user?.role === 'SUPER_ADMIN'
               : href === '/imports'
                 ? ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(user?.role || '')
