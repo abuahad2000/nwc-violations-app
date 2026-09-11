@@ -1,0 +1,11 @@
+# Build configuration only. See docs/NETLIFY_AR.md for runtime prerequisites.
+[build]
+  base = "apps/web"
+  command = "npm run build"
+  publish = ".next"
+
+[build.environment]
+  NODE_VERSION = "24"
+
+# Netlify automatically installs its supported Next.js adapter.
+# Do not add a static SPA fallback: this application uses server routes.
