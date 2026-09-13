@@ -19,6 +19,9 @@ export function applyRepairs(db: DatabaseSync) {
     db.exec(
       'CREATE TABLE IF NOT EXISTS manual_responsibility(violation_id TEXT PRIMARY KEY REFERENCES violations(id),project_id TEXT,owner_id TEXT NOT NULL,reason TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL);',
     );
+    const responsibilityColumns = db.prepare('PRAGMA table_info(manual_responsibility)').all() as { name: string }[];
+    if (!responsibilityColumns.some((c) => c.name === 'responsibility_type'))
+      db.exec("ALTER TABLE manual_responsibility ADD COLUMN responsibility_type TEXT NOT NULL DEFAULT 'MAINTENANCE';");
     db.exec(
       'CREATE TABLE IF NOT EXISTS contractor_aliases(alias_name TEXT PRIMARY KEY,normalized_name TEXT NOT NULL,contractor_id TEXT NOT NULL REFERENCES contractors(id)); CREATE INDEX IF NOT EXISTS contractor_aliases_normalized ON contractor_aliases(normalized_name);',
     );

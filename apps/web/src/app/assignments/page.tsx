@@ -6,6 +6,7 @@ type Row = {
   current_action_owner_id: string | null;
   project_manager_name: string | null;
   manager_override: string | null;
+  responsibility_type: 'MAINTENANCE' | 'CLIENT_ACCOUNT' | '';
   id: string;
   source_reference: string;
   source_status: string;
@@ -109,7 +110,7 @@ export default function Assignments() {
                 setBusy(true);
                 setManagerError('');
                 try {
-                  const maintenance = managerMode === 'MAINTENANCE';
+                  const maintenance = managerMode === 'MAINTENANCE' || managerMode === 'CLIENT_ACCOUNT';
                   const res = await fetch('/api/assignments', {
                     method: maintenance ? 'POST' : 'PATCH',
                     headers: { 'Content-Type': 'application/json' },
@@ -117,7 +118,7 @@ export default function Assignments() {
                       maintenance
                         ? {
                             records: [{ id: editing.id, updated_at: editing.updated_at }],
-                            destination: 'MAINTENANCE',
+                            destination: managerMode === 'CLIENT_ACCOUNT' ? 'CLIENT_ACCOUNT' : 'MAINTENANCE',
                             reason: managerReason,
                           }
                         : {
@@ -159,6 +160,7 @@ export default function Assignments() {
                   </option>
                   <option value="INHERIT">استخدام المدير الأصلي للمشروع</option>
                   <option value="MAINTENANCE">تحويل إلى الصيانة</option>
+                  <option value="CLIENT_ACCOUNT">تنفيذ على حساب العميل — عبدالله الأسود</option>
                 </select>
               </label>
               {managerMode === 'CUSTOM' && (
@@ -187,6 +189,12 @@ export default function Assignments() {
                 <p className="rounded-xl bg-blue-50 p-3">
                   ستصبح الصيانة الجهة المسؤولة عن البلاغ، مع حفظ مقاول المصدر. يمكنك ربطه بمشروع
                   لاحقًا من صفحة الإسناد.
+                </p>
+              )}
+              {managerMode === 'CLIENT_ACCOUNT' && (
+                <p className="rounded-xl bg-amber-50 p-3 text-amber-900">
+                  ستصبح الجهة «تنفيذ على حساب العميل» ويتولى المتابعة عبدالله الأسود، مع بقاء المشروع
+                  المكاني فارغًا وحفظ مقاول المصدر.
                 </p>
               )}
               <label className="block">
@@ -353,7 +361,8 @@ export default function Assignments() {
                     onChange={(e) => setDestination(e.target.value)}
                   >
                     <option value="PROJECT">مشروع — المسؤول مقاول المشروع</option>
-                    <option value="MAINTENANCE">إدارة الصيانة</option>
+                  <option value="MAINTENANCE">إدارة الصيانة</option>
+                  <option value="CLIENT_ACCOUNT">تنفيذ على حساب العميل — عبدالله الأسود</option>
                   </select>
                 </label>
                 {destination === 'PROJECT' && (
@@ -486,8 +495,8 @@ export default function Assignments() {
                         </td>
                         <td>{r.contractor_name || 'غير محدد'}</td>
                         <td>
-                          {r.project_name || 'مشروع غير محدد'}
-                          <p>{r.owner_name || 'بلا جهة'}</p>
+                          {r.project_name || (r.responsibility_type === 'CLIENT_ACCOUNT' ? 'تنفيذ على حساب العميل' : 'مشروع غير محدد')}
+                          <p>{r.responsibility_type === 'CLIENT_ACCOUNT' ? 'تنفيذ على حساب العميل' : r.owner_name || 'بلا جهة'}</p>
                         </td>
                         <td>
                           <p>{r.project_manager_name || 'غير محدد'}</p>
@@ -499,7 +508,9 @@ export default function Assignments() {
                               setEditing(r);
                               setManagerName(r.manager_override || r.project_manager_name || '');
                               setManagerMode(
-                                r.current_action_owner_id === 'cont_nwc_operations'
+                                r.responsibility_type === 'CLIENT_ACCOUNT'
+                                  ? 'CLIENT_ACCOUNT'
+                                  : r.current_action_owner_id === 'cont_nwc_operations'
                                   ? 'MAINTENANCE'
                                   : 'CUSTOM',
                               );

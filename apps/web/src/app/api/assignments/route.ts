@@ -4,10 +4,11 @@ import { randomUUID } from 'node:crypto';
 import { db } from '@/lib/db/async';
 import { authorize } from '@/lib/auth/guard';
 import { violationManagerNameSQL } from '@/lib/domain/manager';
+import { CLIENT_ACCOUNT_MANAGER, responsibilityLabel, type ManualResponsibilityType } from '@/lib/domain/responsibility';
 const querySchema = z.object({
   contractor: z.string().max(100).default(''),
   search: z.string().trim().max(200).default(''),
-  scope: z.enum(['UNASSIGNED', 'NO_PROJECT', 'MAINTENANCE', 'ALL']).default('ALL'),
+  scope: z.enum(['UNASSIGNED', 'NO_PROJECT', 'MAINTENANCE', 'CLIENT_ACCOUNT', 'ALL']).default('ALL'),
   state: z.enum(['OPEN', 'CLOSED', 'ALL']).default('OPEN'),
   page: z.coerce.number().int().min(1).default(1),
 });
@@ -18,7 +19,8 @@ export async function GET(req: Request) {
     const f = querySchema.parse(Object.fromEntries(new URL(req.url).searchParams));
     const clauses = [f.scope === 'UNASSIGNED' ? 'v.current_action_owner_id IS NULL' : '1=1'];
     if (f.scope === 'NO_PROJECT') clauses.push('v.project_id IS NULL');
-    if (f.scope === 'MAINTENANCE') clauses.push("v.current_action_owner_id='cont_nwc_operations'");
+    if (f.scope === 'MAINTENANCE') clauses.push("v.current_action_owner_id='cont_nwc_operations' AND COALESCE((SELECT responsibility_type FROM manual_responsibility mr WHERE mr.violation_id=v.id),'MAINTENANCE')='MAINTENANCE'");
+    if (f.scope === 'CLIENT_ACCOUNT') clauses.push("v.current_action_owner_id='cont_nwc_operations' AND (SELECT responsibility_type FROM manual_responsibility mr WHERE mr.violation_id=v.id)='CLIENT_ACCOUNT'");
     const args: string[] = [];
     if (f.state !== 'ALL') clauses.push(f.state === 'OPEN' ? 'v.is_closed=0' : 'v.is_closed=1');
     if (f.contractor) {
@@ -35,7 +37,7 @@ export async function GET(req: Request) {
       .get(...args);
     const rows = await db
       .prepare(
-        `SELECT v.id,v.current_action_owner_id,${violationManagerNameSQL} project_manager_name,(SELECT manager_name FROM violation_manager_overrides WHERE violation_id=v.id) manager_override,(SELECT name FROM contractors WHERE id=v.current_action_owner_id) owner_name,v.source_reference,v.is_closed,v.source_status,v.updated_at,v.project_id,v.latitude,v.longitude,v.district_raw,v.reported_contractor_id,COALESCE(c.name,v.reported_contractor_name) contractor_name,p.name project_name FROM violations v LEFT JOIN contractors c ON c.id=v.reported_contractor_id LEFT JOIN projects p ON p.id=v.project_id WHERE ${where} ORDER BY v.source_reference LIMIT 50 OFFSET ?`,
+        `SELECT v.id,v.current_action_owner_id,${violationManagerNameSQL} project_manager_name,(SELECT manager_name FROM violation_manager_overrides WHERE violation_id=v.id) manager_override,(SELECT name FROM contractors WHERE id=v.current_action_owner_id) owner_name,COALESCE((SELECT responsibility_type FROM manual_responsibility mr WHERE mr.violation_id=v.id),'') responsibility_type, v.source_reference,v.is_closed,v.source_status,v.updated_at,v.project_id,v.latitude,v.longitude,v.district_raw,v.reported_contractor_id,COALESCE(c.name,v.reported_contractor_name) contractor_name,p.name project_name FROM violations v LEFT JOIN contractors c ON c.id=v.reported_contractor_id LEFT JOIN projects p ON p.id=v.project_id WHERE ${where} ORDER BY v.source_reference LIMIT 50 OFFSET ?`,
       )
       .all(...args, (f.page - 1) * 50);
     const projects = await db
@@ -59,7 +61,7 @@ const bodySchema = z.object({
     .array(z.object({ id: z.string().min(1).max(100), updated_at: z.string().max(50) }))
     .min(1)
     .max(100),
-  destination: z.enum(['PROJECT', 'MAINTENANCE']),
+  destination: z.enum(['PROJECT', 'MAINTENANCE', 'CLIENT_ACCOUNT']),
   project_id: z.string().max(100).optional(),
   reason: z.string().trim().max(1000).default(''),
 });
@@ -79,6 +81,7 @@ export async function POST(req: Request) {
           : null;
       if (body.destination === 'PROJECT' && !project)
         throw Error('اختر مشروعًا معتمدًا من القائمة');
+      const responsibilityType: ManualResponsibilityType = body.destination === 'CLIENT_ACCOUNT' ? 'CLIENT_ACCOUNT' : 'MAINTENANCE';
       const owner = project ? String(project.contractor_id) : 'cont_nwc_operations';
       if (!(await db.prepare('SELECT id FROM contractors WHERE id=?').get(owner)))
         throw Error('الجهة المسؤولة غير متاحة');
@@ -100,11 +103,15 @@ export async function POST(req: Request) {
             .run(randomUUID(), item.id, owner, body.reason, auth.user.id, now);
         await db
           .prepare(
-            'INSERT INTO manual_responsibility(violation_id,project_id,owner_id,reason,updated_by,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(violation_id) DO UPDATE SET project_id=excluded.project_id,owner_id=excluded.owner_id,reason=excluded.reason,updated_by=excluded.updated_by,updated_at=excluded.updated_at',
+            'INSERT INTO manual_responsibility(violation_id,project_id,owner_id,responsibility_type,reason,updated_by,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(violation_id) DO UPDATE SET project_id=excluded.project_id,owner_id=excluded.owner_id,responsibility_type=excluded.responsibility_type,reason=excluded.reason,updated_by=excluded.updated_by,updated_at=excluded.updated_at',
           )
-          .run(item.id, project?.id ?? null, owner, body.reason, auth.user.id, now);
+          .run(item.id, project?.id ?? null, owner, responsibilityType, body.reason, auth.user.id, now);
         const sameProject = project && old.project_id === project.id;
-        if (!sameProject)
+        if (body.destination === 'CLIENT_ACCOUNT')
+          await db
+            .prepare('INSERT INTO violation_manager_overrides(violation_id,manager_name,updated_by,updated_at) VALUES(?,?,?,?) ON CONFLICT(violation_id) DO UPDATE SET manager_name=excluded.manager_name,updated_by=excluded.updated_by,updated_at=excluded.updated_at')
+            .run(item.id, CLIENT_ACCOUNT_MANAGER, auth.user.id, now);
+        else if (!sameProject)
           await db
             .prepare('DELETE FROM violation_manager_overrides WHERE violation_id=?')
             .run(item.id);
@@ -136,6 +143,8 @@ export async function POST(req: Request) {
             JSON.stringify({
               before: { project_id: old.project_id, owner_id: old.current_action_owner_id },
               after: { project_id: project?.id ?? null, owner_id: owner },
+              responsibility_type: responsibilityType,
+              responsibility_label: responsibilityLabel(responsibilityType),
               reason: body.reason,
               closed: old.is_closed,
             }),

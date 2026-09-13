@@ -1,1 +1,1 @@
-CREATE TABLE IF NOT EXISTS manual_responsibility(violation_id TEXT PRIMARY KEY REFERENCES violations(id),project_id TEXT,owner_id TEXT NOT NULL,reason TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS manual_responsibility(violation_id TEXT PRIMARY KEY REFERENCES violations(id),project_id TEXT,owner_id TEXT NOT NULL,responsibility_type TEXT NOT NULL DEFAULT 'MAINTENANCE',reason TEXT NOT NULL,updated_by TEXT NOT NULL,updated_at TEXT NOT NULL);

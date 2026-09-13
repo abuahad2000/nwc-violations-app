@@ -1,3 +1,11 @@
+export const CLIENT_ACCOUNT_MANAGER = 'عبدالله الأسود';
+
+export type ManualResponsibilityType = 'MAINTENANCE' | 'CLIENT_ACCOUNT';
+
+export function responsibilityLabel(type: ManualResponsibilityType | null | undefined) {
+  return type === 'CLIENT_ACCOUNT' ? 'تنفيذ على حساب العميل' : 'إدارة الصيانة';
+}
+
 export type ResponsibilityProject = { id: string; contractor_id: string; name: string };
 export function initialResponsibility(
   row: { project_id: string | null; reported_contractor_id: string | null },
