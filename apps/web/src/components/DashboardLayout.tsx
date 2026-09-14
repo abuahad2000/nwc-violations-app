@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import {
   BarChart3,
   Building2,
@@ -15,6 +15,10 @@ import {
   Settings,
   Upload,
   X,
+  Bell,
+  Moon,
+  Sun,
+  ChevronDown,
 } from 'lucide-react';
 import type { SessionUser, UserRole } from '@/types';
 
@@ -50,13 +54,23 @@ export default function DashboardLayout({
 }) {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const [dark, setDark] = useState(() => typeof window === 'undefined' || window.localStorage.getItem('nitaq-theme') !== 'light');
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+  }, [dark]);
+  const toggleTheme = () => {
+    const nextDark = !dark;
+    setDark(nextDark);
+    document.documentElement.dataset.theme = nextDark ? 'dark' : 'light';
+    window.localStorage.setItem('nitaq-theme', nextDark ? 'dark' : 'light');
+  };
   const links = navigation.filter(([href]) => canSee(href, user.role));
 
   const sidebar = (
-    <aside className="flex h-full min-h-full flex-col bg-[#102c35] p-4 text-white" aria-label="القائمة الرئيسية">
+    <aside className="tabler-sidebar flex h-full min-h-full flex-col p-4 text-white" aria-label="القائمة الرئيسية">
       <div className="mb-5 border-b border-white/15 pb-5">
         <div className="flex items-center gap-3">
-          <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#d7f4e9] text-lg font-black text-[#102c35]">ن</span>
+          <span className="brand-mark flex h-11 w-11 items-center justify-center rounded-2xl text-lg font-black text-white">ن</span>
           <div>
             <p className="font-bold">نطاق</p>
             <p className="text-xs text-white/60">متابعة التعديات</p>
@@ -70,7 +84,7 @@ export default function DashboardLayout({
             href={href}
             onClick={() => setOpen(false)}
             aria-current={pathname === href ? 'page' : undefined}
-            className={`flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition ${pathname === href ? 'bg-[#d7f4e9] text-[#102c35]' : 'text-white/75 hover:bg-white/10 hover:text-white'}`}
+            className={`nav-link flex min-h-11 items-center gap-3 rounded-xl px-3 text-sm font-semibold transition ${pathname === href ? 'active' : 'text-white/75 hover:bg-white/10 hover:text-white'}`}
           >
             <Icon size={18} aria-hidden="true" />
             {label}
@@ -85,17 +99,20 @@ export default function DashboardLayout({
   );
 
   return (
-    <div dir="rtl" className="min-h-screen bg-[#f5f8f8] text-[#173f43]">
-      <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-slate-200 bg-white/95 px-4 shadow-sm backdrop-blur sm:px-6">
-        <button className="rounded-lg p-2 hover:bg-slate-100 lg:hidden" onClick={() => setOpen(true)} aria-label="فتح القائمة">
+    <div dir="rtl" className="dashboard-layout min-h-screen text-slate-900">
+      <header className="site-header sticky top-0 z-30 flex min-h-16 items-center justify-between px-4 py-3 sm:px-6">
+        <button className="mobile-menu rounded-xl p-2 lg:hidden" onClick={() => setOpen(true)} aria-label="فتح القائمة">
           <Menu size={22} />
         </button>
-        <div className="mr-auto flex items-center gap-3">
+        <div className="ml-auto flex items-center gap-2 sm:gap-3">
+          <button className="icon-button header-action" aria-label="الإشعارات" title="الإشعارات"><Bell size={18} /><span className="notification-badge">3</span></button>
+          <button className="icon-button header-action" onClick={toggleTheme} aria-label={dark ? 'تفعيل الوضع الفاتح' : 'تفعيل الوضع الليلي'} title={dark ? 'الوضع الفاتح' : 'الوضع الليلي'}>{dark ? <Sun size={18} /> : <Moon size={18} />}</button>
           <div className="text-start">
-            <p className="text-xs text-slate-500">المستخدم الحالي</p>
-            <p className="font-bold">{user.name}</p>
+            <p className="text-xs text-slate-400">المستخدم الحالي</p>
+            <p className="font-bold text-white">{user.name}</p>
           </div>
-          <span className="rounded-full bg-[#e6f6ef] px-3 py-1 text-xs font-semibold text-[#167257]">{user.role}</span>
+          <span className="hidden rounded-full bg-blue-500/20 px-3 py-1 text-xs font-semibold text-blue-100 sm:inline-flex">{user.role}</span>
+          <ChevronDown size={16} className="text-blue-100/70" />
         </div>
       </header>
       <div className="mx-auto flex max-w-[1600px] gap-5 p-4 sm:p-6">
