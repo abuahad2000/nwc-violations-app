@@ -1,7 +1,7 @@
 @layer theme, base, tabler, components, utilities;
 @import 'tailwindcss';
 @import '../styles/tabler.generated.css' layer(tabler);
-@import 'maplibre-gl/dist/maplibre-gl.css';
+@import 'mapbox-gl/dist/mapbox-gl.css';
 @theme {
   --font-sans: 'Sakkal Majalla', 'Noto Sans Arabic Variable', 'Segoe UI', Arial, sans-serif;
   --color-brand-600: #206bc4;

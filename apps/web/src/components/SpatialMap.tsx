@@ -1,9 +1,8 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import * as maplibregl from 'maplibre-gl';
+import mapboxgl from 'mapbox-gl';
 import type { FeatureCollection } from 'geojson';
 import { serviceLabels, serviceColors, type ServiceType } from '@/lib/domain/service-type';
-maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
 function escapeHtml(value: unknown): string {
   return String(value ?? 'غير محدد').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] || character);
 }
@@ -20,7 +19,7 @@ export default function SpatialMap({
   onSelect: (id: string) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  const map = useRef<maplibregl.Map | null>(null);
+  const map = useRef<mapboxgl.Map | null>(null);
   const select = useRef(onSelect);
   const [service, setService] = useState<ServiceType | 'ALL'>('ALL');
   const [boundaryCount, setBoundaryCount] = useState(0);
@@ -32,7 +31,7 @@ export default function SpatialMap({
     closed: 0,
   });
   const [visiblePoints, setVisiblePoints] = useState<FeatureCollection['features']>([]);
-  const extent = useRef<maplibregl.LngLatBounds | null>(null);
+  const extent = useRef<mapboxgl.LngLatBounds | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [count, setCount] = useState<number | null>(null);
@@ -42,9 +41,11 @@ export default function SpatialMap({
   }, [onSelect]);
   useEffect(() => {
     if (!host.current) return;
-    const m = new maplibregl.Map({
+    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
+    if (token) mapboxgl.accessToken = token;
+    const m = new mapboxgl.Map({
       container: host.current,
-      style: {
+      style: token ? 'mapbox://styles/mapbox/streets-v12' : {
         version: 8,
         sources: {
           osm: {
@@ -71,12 +72,12 @@ export default function SpatialMap({
       },
       center: [46.68, 24.72],
       zoom: 9,
-      attributionControl: { compact: false },
+      attributionControl: true,
     });
     map.current = m;
     const observer = new ResizeObserver(() => m.resize());
     observer.observe(host.current);
-    m.addControl(new maplibregl.NavigationControl(), 'top-left');
+    m.addControl(new mapboxgl.NavigationControl(), 'top-left');
     m.on('load', () => {
       m.resize();
       setReady(true);
@@ -126,7 +127,7 @@ export default function SpatialMap({
                 : !f.properties?.is_closed && f.properties?.source_status === 'تحت معالجة المقاول'),
         );
         setVisiblePoints(d.points.features);
-        const bounds = new maplibregl.LngLatBounds();
+        const bounds = new mapboxgl.LngLatBounds();
         for (const f of d.points.features)
           if (f.geometry.type === 'Point')
             bounds.extend(f.geometry.coordinates as [number, number]);
@@ -136,8 +137,8 @@ export default function SpatialMap({
         setRendered(false);
         m.once('idle', () => setRendered(true));
         if (m.getSource('points')) {
-          (m.getSource('points') as maplibregl.GeoJSONSource).setData(d.points);
-          (m.getSource('boundaries') as maplibregl.GeoJSONSource).setData(d.boundaries);
+          (m.getSource('points') as mapboxgl.GeoJSONSource).setData(d.points);
+          (m.getSource('boundaries') as mapboxgl.GeoJSONSource).setData(d.boundaries);
           return;
         }
         m.addSource('boundaries', { type: 'geojson', data: d.boundaries });
@@ -180,6 +181,21 @@ export default function SpatialMap({
             'line-dasharray': [2, 2],
           },
         });
+        m.addLayer({
+          id: 'boundaries-highlight',
+          type: 'line',
+          source: 'boundaries',
+          paint: { 'line-color': '#fbbf24', 'line-width': 4, 'line-opacity': 0 },
+        });
+        m.on('click', 'boundaries-fill', (event) => {
+          const feature = event.features?.[0];
+          const projectId = feature?.properties?.project_id;
+          if (!projectId || feature?.geometry.type !== 'Polygon' && feature?.geometry.type !== 'MultiPolygon') return;
+          m.flyTo({ center: event.lngLat, zoom: Math.max(m.getZoom(), 13), speed: 0.8, essential: true });
+          m.setPaintProperty('boundaries-highlight', 'line-opacity', ['case', ['==', ['get', 'project_id'], String(projectId)], 1, 0]);
+        });
+        m.on('mouseenter', 'boundaries-fill', () => { m.getCanvas().style.cursor = 'pointer'; });
+        m.on('mouseleave', 'boundaries-fill', () => { m.getCanvas().style.cursor = ''; });
         m.addSource('points', {
           type: 'geojson',
           data: d.points,
@@ -229,7 +245,7 @@ export default function SpatialMap({
           const exportButton = projectId
             ? `<a href="/api/export/kmz/${encodeURIComponent(projectId)}" class="map-popup-export">تصدير KMZ للمشروع المرتبط</a>`
             : '<span class="map-popup-muted">لا يوجد مشروع جاري مرتبط</span>';
-          new maplibregl.Popup({ closeButton: true, maxWidth: '320px', offset: 12 })
+          new mapboxgl.Popup({ closeButton: true, maxWidth: '320px', offset: 12 })
             .setLngLat(coordinates)
             .setHTML(
               `<div dir="rtl" class="map-popup-content"><h4>بلاغ ${escapeHtml(properties.reference)}</h4><span class="map-popup-status" style="background:${popupColor(statusText)}">${escapeHtml(statusText)}</span><dl><dt>المقاول</dt><dd>${escapeHtml(properties.contractor_name)}</dd><dt>الحي</dt><dd>${escapeHtml(properties.district)}</dd><dt>الشارع</dt><dd>${escapeHtml(properties.street)}</dd></dl>${exportButton}</div>`,
@@ -262,7 +278,7 @@ export default function SpatialMap({
     <section className="card surface overflow-hidden" aria-label="خريطة الخدمات والبلاغات">
       <header className="flex flex-wrap items-center justify-between gap-3 bg-[#182433] p-5 text-white">
         <div>
-          <p className="mb-1 text-sm text-cyan-200">المياه والصرف الصحي · OpenStreetMap</p>
+          <p className="mb-1 text-sm text-cyan-200">المياه والصرف الصحي · Mapbox Streets</p>
           <h3 className="text-xl font-bold text-white">
             التوزيع المكاني {count !== null ? '(' + count + ' نقطة)' : '— جارٍ التحميل'}
           </h3>
