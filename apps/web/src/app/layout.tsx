@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import '@fontsource-variable/noto-sans-arabic';
 import './globals.css';
+import { FeedbackProvider } from '@/components/FeedbackProvider';
 export const metadata: Metadata = {
   title: 'التعديات لإدارة المشاريع الرأسمالية',
   description: 'متابعة التعديات والمشاريع والإجراءات لإدارة المشاريع الرأسمالية',
@@ -34,7 +35,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </span>
           </div>
         </header>
-        <main className="relative z-10 mx-auto max-w-[1600px] px-3 py-4 sm:px-6">{children}</main>
+        <FeedbackProvider><main className="relative z-10 mx-auto max-w-[1600px] px-3 py-4 sm:px-6">{children}</main></FeedbackProvider>
       </body>
     </html>
   );

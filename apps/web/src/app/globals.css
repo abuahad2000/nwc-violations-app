@@ -374,6 +374,18 @@ body {
 .header-action { border-color: rgba(255,255,255,.2); background: rgba(255,255,255,.1); color: white; }
 .notification-badge { position: absolute; inset-block-start: -0.35rem; inset-inline-start: -0.35rem; min-width: 1rem; border-radius: 999px; background: #ef4444; color: white; font-size: .65rem; line-height: 1rem; text-align: center; }
 
+.toast-region { position: fixed; inset-block-end: 1.25rem; inset-inline-start: 1.25rem; z-index: 100; display: grid; width: min(22rem, calc(100vw - 2.5rem)); gap: .65rem; }
+.toast { display: flex; align-items: center; gap: .65rem; border: 1px solid rgba(255,255,255,.45); border-radius: 14px; padding: .8rem 1rem; color: #0f172a; background: rgba(255,255,255,.92); box-shadow: 0 14px 34px rgba(2,6,23,.2); backdrop-filter: blur(18px); animation: toast-in .22s ease-out both; font-size: .85rem; }
+.toast-success { border-inline-start: 4px solid #22c55e; }.toast-error { border-inline-start: 4px solid #ef4444; }.toast-info { border-inline-start: 4px solid #3b82f6; }
+.toast-close { margin-inline-start: auto; color: #64748b; }.toast-close:hover { color: #0f172a; }
+@keyframes toast-in { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.empty-state, .error-state, .loading-screen { display: grid; min-height: 14rem; place-items: center; align-content: center; gap: .65rem; border: 1px dashed rgba(148,163,184,.5); border-radius: 16px; padding: 2rem; text-align: center; color: #475569; background: rgba(255,255,255,.58); }
+.empty-state-icon { display: grid; height: 3rem; width: 3rem; place-items: center; border-radius: 999px; background: #dbeafe; color: #1d4ed8; font-size: 1.7rem; }
+.empty-state h3, .error-state h1 { margin: 0; color: #172554; font-size: 1.1rem; font-weight: 800; }.empty-state p, .error-state p { margin: 0; font-size: .9rem; }
+.loading-screen { min-height: 18rem; color: #dbeafe; background: rgba(15,23,42,.35); }.skeleton-block { width: min(24rem, 80%); height: .75rem; border-radius: 999px; background: linear-gradient(90deg, rgba(255,255,255,.12), rgba(255,255,255,.35), rgba(255,255,255,.12)); background-size: 200% 100%; animation: skeleton-shimmer 1.4s infinite; }
+.error-state { min-height: 22rem; color: #fecaca; background: rgba(127,29,29,.22); }.error-state h1 { color: #fff; }.error-state p { color: #fecaca; }
+@keyframes skeleton-shimmer { to { background-position: -200% 0; } }
+
 [data-theme='light'] body {
   background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 52%, #f8fafc 100%);
 }

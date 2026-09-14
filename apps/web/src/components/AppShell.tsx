@@ -14,6 +14,7 @@ import {
   Settings,
 } from 'lucide-react';
 import { Sheet } from './ui/sheet';
+import { useToast } from './FeedbackProvider';
 import type { SessionUser } from '@/types';
 const links = [
   ['/dashboard', 'لوحة المتابعة', LayoutDashboard],
@@ -34,6 +35,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<SessionUser | null>(null);
   const [error, setError] = useState('');
   const [open, setOpen] = useState(false);
+  const toast = useToast();
   const pathname = usePathname();
   useEffect(() => {
     const controller = new AbortController();
@@ -91,8 +93,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         className="btn secondary sidebar-logout mt-auto"
         onClick={async () => {
           const r = await fetch('/api/auth/logout', { method: 'POST' });
-          if (r.ok) router.replace('/login');
-          else setError('تعذر تسجيل الخروج');
+          if (r.ok) { toast('تم تسجيل الخروج بنجاح', 'success'); router.replace('/login'); }
+          else { setError('تعذر تسجيل الخروج'); toast('تعذر تسجيل الخروج، حاول مجددًا', 'error'); }
         }}
       >
         <LogOut size={18} />
