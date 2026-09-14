@@ -59,9 +59,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <p className="sidebar-muted mt-1 text-xs">مساحة المتابعة التشغيلية</p>
       </div>
       <nav aria-label="القائمة الرئيسية" className="nav flex-column space-y-1">
-        {links
-          .filter(([href]) => href !== '/contractor-management' || user?.role === 'SUPER_ADMIN')
-          .map(([href, label, Icon]) => (
+        {links.map(([href, label, Icon]) => (
             <Link
               key={href}
               href={href}
