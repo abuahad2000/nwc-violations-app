@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import mapboxgl from 'mapbox-gl';
+import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { serviceLabels, serviceColors, type ServiceType } from '@/lib/domain/service-type';
 function escapeHtml(value: unknown): string {
@@ -19,7 +19,7 @@ export default function SpatialMap({
   onSelect: (id: string) => void;
 }) {
   const host = useRef<HTMLDivElement>(null);
-  const map = useRef<mapboxgl.Map | null>(null);
+  const map = useRef<maplibregl.Map | null>(null);
   const select = useRef(onSelect);
   const [service, setService] = useState<ServiceType | 'ALL'>('ALL');
   const [boundaryCount, setBoundaryCount] = useState(0);
@@ -31,21 +31,20 @@ export default function SpatialMap({
     closed: 0,
   });
   const [visiblePoints, setVisiblePoints] = useState<FeatureCollection['features']>([]);
-  const extent = useRef<mapboxgl.LngLatBounds | null>(null);
+  const extent = useRef<maplibregl.LngLatBounds | null>(null);
   const [error, setError] = useState('');
   const [ready, setReady] = useState(false);
   const [count, setCount] = useState<number | null>(null);
   const [rendered, setRendered] = useState(false);
+  const [basemap, setBasemap] = useState<'osm' | 'voyager' | 'dark'>('osm');
   useEffect(() => {
     select.current = onSelect;
   }, [onSelect]);
   useEffect(() => {
     if (!host.current) return;
-    const token = process.env.NEXT_PUBLIC_MAPBOX_TOKEN;
-    if (token) mapboxgl.accessToken = token;
-    const m = new mapboxgl.Map({
+    const m = new maplibregl.Map({
       container: host.current,
-      style: token ? 'mapbox://styles/mapbox/streets-v12' : {
+      style: {
         version: 8,
         sources: {
           osm: {
@@ -59,6 +58,8 @@ export default function SpatialMap({
             attribution:
               '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener noreferrer">OpenStreetMap</a> contributors',
           },
+          voyager: { type: 'raster', tiles: ['https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors · © CARTO' },
+          dark: { type: 'raster', tiles: ['https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'], tileSize: 256, attribution: '© OpenStreetMap contributors · © CARTO' },
         },
         layers: [
           { id: 'background', type: 'background', paint: { 'background-color': '#edf3f5' } },
@@ -68,16 +69,18 @@ export default function SpatialMap({
             source: 'osm',
             paint: { 'raster-saturation': -0.65, 'raster-contrast': -0.1 },
           },
+          { id: 'voyager-basemap', type: 'raster', source: 'voyager', layout: { visibility: 'none' } },
+          { id: 'dark-basemap', type: 'raster', source: 'dark', layout: { visibility: 'none' } },
         ],
       },
       center: [46.68, 24.72],
       zoom: 9,
-      attributionControl: true,
+      attributionControl: { compact: false },
     });
     map.current = m;
     const observer = new ResizeObserver(() => m.resize());
     observer.observe(host.current);
-    m.addControl(new mapboxgl.NavigationControl(), 'top-left');
+    m.addControl(new maplibregl.NavigationControl(), 'top-left');
     m.on('load', () => {
       m.resize();
       setReady(true);
@@ -127,7 +130,7 @@ export default function SpatialMap({
                 : !f.properties?.is_closed && f.properties?.source_status === 'تحت معالجة المقاول'),
         );
         setVisiblePoints(d.points.features);
-        const bounds = new mapboxgl.LngLatBounds();
+        const bounds = new maplibregl.LngLatBounds();
         for (const f of d.points.features)
           if (f.geometry.type === 'Point')
             bounds.extend(f.geometry.coordinates as [number, number]);
@@ -137,8 +140,8 @@ export default function SpatialMap({
         setRendered(false);
         m.once('idle', () => setRendered(true));
         if (m.getSource('points')) {
-          (m.getSource('points') as mapboxgl.GeoJSONSource).setData(d.points);
-          (m.getSource('boundaries') as mapboxgl.GeoJSONSource).setData(d.boundaries);
+          (m.getSource('points') as maplibregl.GeoJSONSource).setData(d.points);
+          (m.getSource('boundaries') as maplibregl.GeoJSONSource).setData(d.boundaries);
           return;
         }
         m.addSource('boundaries', { type: 'geojson', data: d.boundaries });
@@ -245,7 +248,7 @@ export default function SpatialMap({
           const exportButton = projectId
             ? `<a href="/api/export/kmz/${encodeURIComponent(projectId)}" class="map-popup-export">تصدير KMZ للمشروع المرتبط</a>`
             : '<span class="map-popup-muted">لا يوجد مشروع جاري مرتبط</span>';
-          new mapboxgl.Popup({ closeButton: true, maxWidth: '320px', offset: 12 })
+          new maplibregl.Popup({ closeButton: true, maxWidth: '320px', offset: 12 })
             .setLngLat(coordinates)
             .setHTML(
               `<div dir="rtl" class="map-popup-content"><h4>بلاغ ${escapeHtml(properties.reference)}</h4><span class="map-popup-status" style="background:${popupColor(statusText)}">${escapeHtml(statusText)}</span><dl><dt>المقاول</dt><dd>${escapeHtml(properties.contractor_name)}</dd><dt>الحي</dt><dd>${escapeHtml(properties.district)}</dd><dt>الشارع</dt><dd>${escapeHtml(properties.street)}</dd></dl>${exportButton}</div>`,
@@ -274,11 +277,17 @@ export default function SpatialMap({
     return () => controller.abort();
   }, [query, ready, service, status]);
 
+  useEffect(() => {
+    if (!ready || !map.current) return;
+    const m = map.current;
+    for (const id of ['osm-streets', 'voyager-basemap', 'dark-basemap']) m.setLayoutProperty(id, 'visibility', id === `${basemap === 'osm' ? 'osm-streets' : `${basemap}-basemap`}` ? 'visible' : 'none');
+  }, [basemap, ready]);
+
   return (
     <section className="card surface overflow-hidden" aria-label="خريطة الخدمات والبلاغات">
       <header className="flex flex-wrap items-center justify-between gap-3 bg-[#182433] p-5 text-white">
         <div>
-          <p className="mb-1 text-sm text-cyan-200">المياه والصرف الصحي · Mapbox Streets</p>
+          <p className="mb-1 text-sm text-cyan-200">المياه والصرف الصحي · OpenStreetMap</p>
           <h3 className="text-xl font-bold text-white">
             التوزيع المكاني {count !== null ? '(' + count + ' نقطة)' : '— جارٍ التحميل'}
           </h3>
@@ -294,6 +303,15 @@ export default function SpatialMap({
           عرض جميع النقاط
         </button>
       </header>
+      <div className="flex flex-wrap items-center gap-3 border-b border-slate-200 bg-white/70 p-4 text-sm">
+        <label htmlFor="basemap-theme" className="font-semibold text-slate-700">نمط الخريطة</label>
+        <select id="basemap-theme" value={basemap} onChange={(event) => setBasemap(event.target.value as typeof basemap)} className="field h-10 rounded-xl px-3">
+          <option value="osm">OpenStreetMap — واضح</option>
+          <option value="voyager">OSM Voyager — ملون</option>
+          <option value="dark">OSM Dark — داكن</option>
+        </select>
+        <span className="text-xs text-slate-500">تتضمن أسماء الشوارع · © OpenStreetMap contributors</span>
+      </div>
       <div
         role="tablist"
         aria-label="نوع المشروع على الخريطة"
@@ -442,3 +460,4 @@ export default function SpatialMap({
     </section>
   );
 }
+maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
