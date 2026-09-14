@@ -1,5 +1,6 @@
 'use client';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import AppShell from '@/components/AppShell';
 import {
   serviceLabels,
@@ -162,7 +163,7 @@ export default function ProjectsPage() {
                     <td className="p-3">
                       <bdi>{p.operational_number}</bdi>
                     </td>
-                    <td className="max-w-80 p-3">{p.name}</td>
+                    <td className="max-w-80 p-3"><Link className="font-bold text-blue-700 hover:underline" href={`/projects/${encodeURIComponent(p.id)}`}>{p.name}</Link></td>
                     <td className="p-3">
                       <span
                         title={p.service_source}
