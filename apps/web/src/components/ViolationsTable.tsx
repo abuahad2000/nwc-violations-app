@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { ArrowDown, ArrowUp, Eye, Pencil, Search } from 'lucide-react';
+import { ArrowDown, ArrowUp, Search } from 'lucide-react';
 
 export type ViolationTableRow = {
   id: string;
@@ -11,13 +11,16 @@ export type ViolationTableRow = {
   source_status: string;
   classification: string;
   project_name: string | null;
+  age_days: number | null;
+  is_closed?: number;
 };
+export type ViolationRow = ViolationTableRow;
 
 type Column = { key: keyof ViolationTableRow; label: string };
 const columns: Column[] = [
   { key: 'source_reference', label: 'رقم البلاغ' },
-  { key: 'contractor_name', label: 'المقاول' },
   { key: 'district', label: 'الحي' },
+  { key: 'contractor_name', label: 'المقاول في المصدر' },
   { key: 'source_status', label: 'الحالة' },
   { key: 'classification', label: 'التصنيف' },
   { key: 'project_name', label: 'المشروع' },
@@ -29,14 +32,14 @@ function statusTone(status: string): string {
   return 'bg-rose-50 text-rose-700';
 }
 
-export default function ViolationsTable({ rows, onSelect }: { rows: ViolationTableRow[]; onSelect?: (row: ViolationTableRow) => void }) {
+export default function ViolationsTable({ rows, statuses: statusOptions, onSelect }: { rows: ViolationTableRow[]; statuses?: string[]; onSelect?: (row: ViolationTableRow) => void }) {
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [status, setStatus] = useState('');
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
+  const [pageSize, setPageSize] = useState(25);
   const [sort, setSort] = useState<{ key: keyof ViolationTableRow; direction: 'asc' | 'desc' }>({ key: 'source_reference', direction: 'asc' });
-  const statuses = useMemo(() => [...new Set(rows.map((row) => row.source_status).filter(Boolean))], [rows]);
+  const statuses = useMemo(() => statusOptions?.length ? statusOptions : [...new Set(rows.map((row) => row.source_status).filter(Boolean))], [rows, statusOptions]);
   useEffect(() => {
     const timer = window.setTimeout(() => { setDebouncedSearch(search); setPage(1); }, 300);
     return () => window.clearTimeout(timer);
@@ -71,12 +74,12 @@ export default function ViolationsTable({ rows, onSelect }: { rows: ViolationTab
       </div>
       <div className="overflow-x-auto">
         <table className="w-full min-w-[920px] text-sm">
-          <thead className="bg-slate-100/80 text-slate-600"><tr>{columns.map((column) => <th key={column.key} className="whitespace-nowrap px-4 py-3 text-start font-semibold"><button className="inline-flex items-center gap-1" onClick={() => toggleSort(column.key)}>{column.label}{sort.key === column.key && (sort.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</button></th>)}<th className="px-4 py-3">إجراء</th></tr></thead>
-          <tbody>{pagedRows.map((row, index) => <tr key={row.id} className={`border-t border-slate-100 transition hover:bg-blue-50/70 ${index % 2 ? 'bg-slate-50/45' : 'bg-white/30'}`}><td className="px-4 py-4"><button className="font-bold text-blue-700 hover:underline" onClick={() => onSelect?.(row)}><bdi>{row.source_reference}</bdi></button></td><td className="px-4 py-4">{row.contractor_name || 'غير محدد'}</td><td className="px-4 py-4">{row.district || 'غير محدد'}</td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(row.source_status)}`}>{row.source_status}</span></td><td className="px-4 py-4">{row.classification}</td><td className="max-w-64 truncate px-4 py-4">{row.project_name || 'الصيانة / خارج المشاريع'}</td><td className="px-4 py-4"><div className="flex gap-1"><button className="icon-button" aria-label={`عرض البلاغ ${row.source_reference}`} title="عرض" onClick={() => onSelect?.(row)}><Eye size={16} /></button><button className="icon-button" aria-label={`تعديل البلاغ ${row.source_reference}`} title="تعديل" onClick={() => onSelect?.(row)}><Pencil size={16} /></button></div></td></tr>)}</tbody>
+          <thead className="bg-slate-100/80 text-slate-600"><tr>{columns.map((column) => <th key={column.key} className="whitespace-nowrap px-4 py-3 text-start font-semibold"><button className="inline-flex items-center gap-1" onClick={() => toggleSort(column.key)}>{column.label}{sort.key === column.key && (sort.direction === 'asc' ? <ArrowUp size={14} /> : <ArrowDown size={14} />)}</button></th>)}</tr></thead>
+          <tbody>{pagedRows.map((row, index) => <tr key={row.id} className={`border-t border-slate-100 transition hover:bg-blue-50/70 ${index % 2 ? 'bg-slate-50/45' : 'bg-white/30'}`}><td className="px-4 py-4"><button className="font-bold text-blue-700 hover:underline" onClick={() => onSelect?.(row)}><bdi>{row.source_reference}</bdi></button></td><td className="px-4 py-4">{row.district || 'غير محدد'}</td><td className="px-4 py-4">{row.contractor_name || 'غير محدد'}</td><td className="px-4 py-4">{row.classification}</td><td className="px-4 py-4"><span className={`rounded-full px-2.5 py-1 text-xs font-semibold ${statusTone(row.source_status)}`}>{row.source_status}</span></td><td className="px-4 py-4">{row.is_closed ? 'مغلق' : row.age_days == null ? '—' : `${row.age_days.toLocaleString('ar-SA')} يوم`}</td></tr>)}</tbody>
         </table>
       </div>
       {!visibleRows.length && <p className="p-8 text-center text-slate-500">لا توجد بلاغات مطابقة.</p>}
-      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>عرض {pagedRows.length.toLocaleString('ar-SA')} من {rows.length.toLocaleString('ar-SA')} بلاغ</span><div className="flex items-center gap-2"><label>صفوف <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-lg border px-2"><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option></select></label><button className="btn secondary px-3 py-1.5" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>السابق</button><span>{page.toLocaleString('ar-SA')} / {pageCount.toLocaleString('ar-SA')}</span><button className="btn secondary px-3 py-1.5" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>التالي</button></div></footer>
+      <footer className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 px-4 py-3 text-xs text-slate-500"><span>عرض {pagedRows.length.toLocaleString('ar-SA')} من {rows.length.toLocaleString('ar-SA')} بلاغ</span><div className="flex items-center gap-2"><label>صفوف <select value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }} className="h-8 rounded-lg border px-2"><option value={25}>25</option></select></label><button className="btn secondary px-3 py-1.5" disabled={page <= 1} onClick={() => setPage((p) => p - 1)}>السابق</button><span>{page.toLocaleString('ar-SA')} / {pageCount.toLocaleString('ar-SA')}</span><button className="btn secondary px-3 py-1.5" disabled={page >= pageCount} onClick={() => setPage((p) => p + 1)}>التالي</button></div></footer>
     </section>
   );
 }
