@@ -10,26 +10,31 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang="ar" dir="rtl">
       <body className="tabler-app">
-        <header className="navbar navbar-light border-b border-slate-200 bg-white px-4 py-4">
+        <div className="app-backdrop" aria-hidden="true">
+          <span className="orb orb-one" />
+          <span className="orb orb-two" />
+          <span className="orb orb-three" />
+        </div>
+        <header className="site-header px-4 py-4">
           <div className="mx-auto flex w-full max-w-[1600px] items-center gap-3">
             <span
-              className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-900 text-xl font-bold text-white"
+              className="brand-mark grid h-12 w-12 shrink-0 place-items-center rounded-2xl text-xl font-bold text-white"
               aria-hidden="true"
             >
               ت
             </span>
             <div>
-              <h1 className="text-sm font-bold leading-7 sm:text-base">
+              <h1 className="text-sm font-bold leading-7 text-white sm:text-base">
                 التعديات لإدارة المشاريع الرأسمالية
               </h1>
-              <p className="text-sm text-slate-500">متابعة التعديات والمشاريع</p>
+              <p className="text-sm text-blue-100/70">متابعة التعديات والمشاريع</p>
             </div>
-            <span className="ms-auto hidden text-sm text-slate-500 sm:block">
+            <span className="ms-auto hidden text-sm text-blue-100/70 sm:block">
               الرياض · شركة المياه الوطنية
             </span>
           </div>
         </header>
-        <main className="mx-auto max-w-[1600px] px-3 py-4 sm:px-6">{children}</main>
+        <main className="relative z-10 mx-auto max-w-[1600px] px-3 py-4 sm:px-6">{children}</main>
       </body>
     </html>
   );

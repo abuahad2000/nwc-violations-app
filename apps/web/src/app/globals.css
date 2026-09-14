@@ -218,3 +218,152 @@ button:disabled {
     print-color-adjust: exact;
   }
 }
+
+/* Nitaq modern glass design system */
+:root {
+  --nitaq-night: #0f172a;
+  --nitaq-royal: #1e3a8a;
+  --nitaq-blue: #3b82f6;
+  --nitaq-glass: rgba(255, 255, 255, 0.84);
+  --nitaq-glass-strong: rgba(255, 255, 255, 0.94);
+  --nitaq-line: rgba(255, 255, 255, 0.22);
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  position: relative;
+  overflow-x: hidden;
+  background:
+    radial-gradient(circle at 8% 12%, rgba(59, 130, 246, 0.32), transparent 30rem),
+    radial-gradient(circle at 92% 72%, rgba(30, 58, 138, 0.5), transparent 34rem),
+    linear-gradient(135deg, var(--nitaq-night) 0%, #162e69 52%, var(--nitaq-royal) 100%);
+  color: #10234d;
+}
+
+.app-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 999px;
+  filter: blur(2px);
+  opacity: 0.34;
+  animation: float-orb 16s ease-in-out infinite alternate;
+}
+
+.orb-one { width: 18rem; height: 18rem; top: 8%; inset-inline-end: 22%; background: #60a5fa; }
+.orb-two { width: 12rem; height: 12rem; bottom: 18%; inset-inline-start: 5%; background: #818cf8; animation-delay: -4s; }
+.orb-three { width: 8rem; height: 8rem; top: 38%; inset-inline-start: 42%; background: #bfdbfe; animation-delay: -8s; }
+
+@keyframes float-orb {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(2rem, -1.5rem, 0) scale(1.08); }
+}
+
+.site-header {
+  position: relative;
+  z-index: 10;
+  border-bottom: 1px solid var(--nitaq-line);
+  background: rgba(15, 23, 42, 0.45);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(18px);
+}
+
+.brand-mark {
+  background: linear-gradient(145deg, #60a5fa, #2563eb);
+  box-shadow: 0 8px 24px rgba(37, 99, 235, 0.35);
+}
+
+.tabler-app .dashboard-hero,
+.tabler-app .surface,
+.tabler-app .card.surface {
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  border-radius: 16px;
+  background: var(--nitaq-glass);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(18px);
+}
+
+.tabler-app .dashboard-hero {
+  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  background:
+    linear-gradient(135deg, rgba(30, 58, 138, 0.96), rgba(37, 99, 235, 0.76)),
+    radial-gradient(circle at 12% 15%, rgba(147, 197, 253, 0.42), transparent 24rem);
+  color: white;
+  box-shadow: 0 18px 45px rgba(15, 23, 42, 0.22);
+}
+
+.tabler-app .dashboard-hero .text-slate-500,
+.tabler-app .dashboard-hero .text-slate-600,
+.tabler-app .dashboard-hero .text-teal-200,
+.tabler-app .dashboard-hero .text-cyan-100 { color: rgba(239, 246, 255, 0.82); }
+
+.tabler-app .surface:hover {
+  border-color: rgba(147, 197, 253, 0.82);
+  box-shadow: 0 14px 38px rgba(15, 23, 42, 0.16);
+}
+
+.tabler-app .field,
+.tabler-app input,
+.tabler-app select,
+.tabler-app textarea {
+  border-color: rgba(148, 163, 184, 0.52);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.78);
+  box-shadow: inset 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.tabler-app .primary {
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #3b82f6);
+  box-shadow: 0 8px 18px rgba(37, 99, 235, 0.24);
+}
+
+.tabler-app .secondary {
+  border-color: rgba(148, 163, 184, 0.48);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.76);
+}
+
+.tabler-sidebar {
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 16px;
+  background: rgba(15, 23, 42, 0.78);
+  box-shadow: 0 16px 40px rgba(2, 6, 23, 0.22);
+  backdrop-filter: blur(20px);
+}
+
+.tabler-sidebar .nav-link.active {
+  background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+  box-shadow: 0 7px 18px rgba(37, 99, 235, 0.28);
+}
+
+.mobile-menu {
+  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.14);
+  color: white;
+}
+
+.metric-card {
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.metric-card:hover { transform: translateY(-4px); }
+
+@media (max-width: 1023px) {
+  .app-navigation + [data-state] .tabler-sidebar { border-radius: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .orb { animation: none; }
+  .metric-card:hover { transform: none; }
+}

@@ -121,9 +121,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </p>
     );
   return (
-    <div className="flex min-w-0 flex-col gap-4 lg:flex-row lg:gap-6">
+    <div className="app-shell flex min-w-0 flex-col gap-4 lg:flex-row lg:gap-6">
       <button
-        className="btn secondary self-start lg:hidden print:hidden"
+        className="mobile-menu btn secondary self-start lg:hidden print:hidden"
         onClick={() => setOpen(true)}
       >
         <Menu size={20} />
