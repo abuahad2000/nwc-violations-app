@@ -4,16 +4,13 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useEffect, useState, type ReactNode } from 'react';
 import {
-  BarChart3,
   Building2,
   ClipboardList,
-  FileSpreadsheet,
   LayoutDashboard,
   LogOut,
   Map,
   Menu,
   Settings,
-  Upload,
   X,
   Bell,
   Moon,
@@ -26,20 +23,17 @@ type LayoutRole = UserRole | 'EXECUTIVE';
 
 const navigation = [
   ['/dashboard', 'لوحة المتابعة', LayoutDashboard],
+  ['/infographic', 'إنفوجرافيك المشاريع', LayoutDashboard],
   ['/violations', 'سجل التعديات', ClipboardList],
+  ['/assignments', 'إسناد البلاغات', ClipboardList],
   ['/map', 'الخريطة', Map],
-  ['/projects', 'مرجع المشاريع', Building2],
   ['/contractors', 'المقاولون', Building2],
-  ['/imports', 'استيراد البيانات', Upload],
-  ['/reports', 'التقارير', FileSpreadsheet],
-  ['/programs', 'مديرو البرامج', BarChart3],
-  ['/settings', 'الإعدادات', Settings],
+  ['/contractor-management', 'تعديل بيانات المقاولين', Settings],
 ] as const;
 
 function canSee(href: string, role: LayoutRole): boolean {
   if (role === 'CONTRACTOR_USER') return ['/dashboard', '/violations', '/map', '/reports'].includes(href);
-  if (href === '/settings') return role === 'SUPER_ADMIN';
-  if (href === '/imports') return ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(role);
+  if (href === '/contractor-management') return role === 'SUPER_ADMIN';
   return true;
 }
 

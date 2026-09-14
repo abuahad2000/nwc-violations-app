@@ -6,7 +6,6 @@ import { Download, Search, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
 import AppShell from './AppShell';
 import TaskPanel from './TaskPanel';
 import ManagerCharts from './ManagerCharts';
-import ProgramDashboardChart from './ProgramDashboardChart';
 import type { ManagerSummary, StatusCount } from '@/lib/domain/manager';
 import { Sheet } from './ui/sheet';
 const SpatialMap = dynamic(() => import('./SpatialMap'), {
@@ -209,14 +208,14 @@ export default function ViolationExplorer({
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
   });
+  const contractorCount = stats?.statuses.find((item) => item.status === 'تحت معالجة المقاول')?.count || 0;
+  const entityCount = stats?.statuses.find((item) => item.status === 'تحت معالجة الجهة المتعدية')?.count || 0;
   const cards = stats
     ? ([
-        ['إجمالي التعديات', stats.total, {}],
-        ['داخل المشاريع', stats.inside_project, { classification: 'INSIDE_PROJECT_BOUNDARY' }],
-        ['خارج المشاريع', stats.outside_project, { classification: 'OUTSIDE_PROJECT_BOUNDARY' }],
-        ['تحتاج مراجعة', stats.under_review, { classification: 'UNDER_REVIEW' }],
-        ['تمت المعالجة / مغلق', stats.closed, { open: '0' }],
-        ['مفتوح أكثر من 180 يومًا', stats.age_181_plus, { aging: '181+' }],
+        ['إجمالي البلاغات', stats.total, {}],
+        ['تحت معالجة المقاول', contractorCount, { source_status: 'تحت معالجة المقاول' }],
+        ['تحت معالجة الجهة', entityCount, { source_status: 'تحت معالجة الجهة المتعدية' }],
+        ['تمت المعالجة', stats.closed, { open: '0' }],
       ] as const)
     : [];
   return (
@@ -251,7 +250,7 @@ export default function ViolationExplorer({
           </p>
         )}
         {mode === 'dashboard' && (
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
             {cards.map(([label, value, filter]) => (
               <button
                 key={label}
@@ -385,23 +384,7 @@ export default function ViolationExplorer({
           المؤشرات والجدول والخريطة والتصدير تتبع الفلاتر الحالية. العمر ليس مهلة إجرائية معتمدة.
         </p>
         {mode === 'dashboard' && stats && (
-          <ManagerCharts
-            managers={stats.managers}
-            statuses={stats.statuses}
-            unassigned={stats.unassigned_manager}
-            total={stats.total}
-            closed={stats.closed}
-            onManager={(manager) => apply({ ...filters, manager })}
-            onStatus={(source_status) => apply({ ...filters, source_status })}
-          />
-        )}
-        {mode === 'dashboard' && (
-          <ProgramDashboardChart
-            query={query}
-            onSelect={(program_manager, manager, executive) =>
-              apply({ ...filters, program_manager, manager, executive })
-            }
-          />
+          <ManagerCharts statuses={stats.statuses} total={stats.total} closed={stats.closed} onStatus={(source_status) => apply({ ...filters, source_status })} />
         )}
         {mode !== 'list' && <SpatialMap query={query} onSelect={details} />}
         <section className="card surface min-w-0 overflow-hidden">

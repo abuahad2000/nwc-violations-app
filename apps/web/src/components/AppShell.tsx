@@ -7,8 +7,6 @@ import {
   ClipboardList,
   Map,
   Building2,
-  FileSpreadsheet,
-  Upload,
   Menu,
   LogOut,
   Settings,
@@ -24,11 +22,6 @@ const links = [
   ['/map', 'الخريطة', Map],
   ['/contractors', 'المقاولون', Building2],
   ['/contractor-management', 'تعديل بيانات المقاولين', Settings],
-  ['/projects', 'مرجع المشاريع', Building2],
-  ['/imports', 'الاستيراد', Upload],
-  ['/reports', 'التقارير', FileSpreadsheet],
-  ['/programs', 'مديرو البرامج', Building2],
-  ['/settings', 'إدارة الحسابات', Settings],
 ] as const;
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
@@ -67,15 +60,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       </div>
       <nav aria-label="القائمة الرئيسية" className="nav flex-column space-y-1">
         {links
-          .filter(([href]) =>
-            href === '/settings' || href === '/contractor-management'
-              ? user?.role === 'SUPER_ADMIN'
-              : href === '/imports' || href === '/assignments'
-                ? ['SUPER_ADMIN', 'PROGRAM_MANAGER'].includes(user?.role || '')
-                : user?.role === 'CONTRACTOR_USER'
-                  ? !['/contractors', '/projects', '/programs', '/infographic'].includes(href)
-                  : true,
-          )
+          .filter(([href]) => href !== '/contractor-management' || user?.role === 'SUPER_ADMIN')
           .map(([href, label, Icon]) => (
             <Link
               key={href}
