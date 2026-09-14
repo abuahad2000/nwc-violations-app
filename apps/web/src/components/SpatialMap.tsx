@@ -4,6 +4,14 @@ import * as maplibregl from 'maplibre-gl';
 import type { FeatureCollection } from 'geojson';
 import { serviceLabels, serviceColors, type ServiceType } from '@/lib/domain/service-type';
 maplibregl.setWorkerUrl('/maplibre/maplibre-gl-worker.mjs');
+function escapeHtml(value: unknown): string {
+  return String(value ?? 'غير محدد').replace(/[&<>'"]/g, (character) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' })[character] || character);
+}
+function popupColor(status: string): string {
+  if (status.includes('تمت') || status.includes('معالج')) return '#059669';
+  if (status.includes('مقاول')) return '#d97706';
+  return '#dc2626';
+}
 export default function SpatialMap({
   query,
   onSelect,
@@ -210,8 +218,23 @@ export default function SpatialMap({
           },
         });
         m.on('click', 'points-layer', (e) => {
-          const id = e.features?.[0]?.properties.id;
-          if (id) select.current(String(id));
+          const feature = e.features?.[0];
+          const properties = feature?.properties;
+          const id = properties?.id;
+          if (!id || feature?.geometry.type !== 'Point') return;
+          select.current(String(id));
+          const statusText = String(properties?.source_status || 'غير محدد');
+          const projectId = properties?.project_id ? String(properties.project_id) : '';
+          const coordinates = feature.geometry.coordinates as [number, number];
+          const exportButton = projectId
+            ? `<a href="/api/export/kmz/${encodeURIComponent(projectId)}" class="map-popup-export">تصدير KMZ للمشروع المرتبط</a>`
+            : '<span class="map-popup-muted">لا يوجد مشروع جاري مرتبط</span>';
+          new maplibregl.Popup({ closeButton: true, maxWidth: '320px', offset: 12 })
+            .setLngLat(coordinates)
+            .setHTML(
+              `<div dir="rtl" class="map-popup-content"><h4>بلاغ ${escapeHtml(properties.reference)}</h4><span class="map-popup-status" style="background:${popupColor(statusText)}">${escapeHtml(statusText)}</span><dl><dt>المقاول</dt><dd>${escapeHtml(properties.contractor_name)}</dd><dt>الحي</dt><dd>${escapeHtml(properties.district)}</dd><dt>الشارع</dt><dd>${escapeHtml(properties.street)}</dd></dl>${exportButton}</div>`,
+            )
+            .addTo(m);
         });
         for (const layer of ['points-layer', 'clusters']) {
           m.on('mouseenter', layer, () => {
@@ -394,6 +417,12 @@ export default function SpatialMap({
         <span>🟠 بقية المفتوح</span>
         <span>حدود المياه أزرق · الصرف أخضر</span>
       </footer>
+      <div className="flex flex-wrap gap-4 border-t border-slate-100 bg-white px-4 py-3 text-xs text-slate-600" aria-label="مفتاح ألوان الخريطة">
+        <span><i className="me-1 inline-block h-3 w-3 rounded-full bg-red-600" />معلّق / مفتوح</span>
+        <span><i className="me-1 inline-block h-3 w-3 rounded-full bg-amber-600" />تحت معالجة المقاول</span>
+        <span><i className="me-1 inline-block h-3 w-3 rounded-full bg-emerald-600" />تمت المعالجة</span>
+        <span><i className="me-1 inline-block h-3 w-3 rounded-sm bg-blue-600/30 ring-1 ring-blue-600" />نطاق مشروع</span>
+      </div>
     </section>
   );
 }

@@ -1,6 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Required by apps/web/Dockerfile so the production image contains only
+  // the standalone server and its runtime dependencies.
+  output: 'standalone',
   agentRules: false,
   turbopack: { root: import.meta.dirname },
   serverExternalPackages: ['pg', 'xlsx', 'yauzl'],

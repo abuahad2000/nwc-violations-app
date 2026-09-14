@@ -16,6 +16,10 @@ export const FilterSchema = z.object({
   manager: z.string().trim().max(200).default(''),
   program_manager: z.string().trim().max(200).default(''),
   source_status: z.string().trim().max(200).default(''),
+  status: z.string().trim().max(1000).default(''),
+  date_from: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/).default(''),
+  date_to: z.string().regex(/^$|^\d{4}-\d{2}-\d{2}$/).default(''),
+  district: z.string().trim().max(200).default(''),
   open: z.enum(['', '1', '0']).default(''),
   page: z.coerce.number().int().min(1).max(1000000).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(25),
@@ -49,9 +53,15 @@ export function buildViolationFilter(f: Filters, user: SessionUser) {
     if (f.manager !== '__unassigned__') params.push(f.manager);
   }
   if (f.source_status) {
-    clauses.push('v.source_status = ?');
-    params.push(f.source_status);
+    const statuses = f.source_status.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 20);
+    if (statuses.length) {
+      clauses.push(`v.source_status IN (${statuses.map(() => '?').join(',')})`);
+      params.push(...statuses);
+    }
   }
+  if (f.date_from) { clauses.push('date(v.reported_date) >= date(?)'); params.push(f.date_from); }
+  if (f.date_to) { clauses.push('date(v.reported_date) <= date(?)'); params.push(f.date_to); }
+  if (f.district) { clauses.push('v.district_raw LIKE ?'); params.push(`%${f.district}%`); }
   if (f.search) {
     clauses.push(
       '(v.source_reference LIKE ? OR v.description_raw LIKE ? OR v.district_raw LIKE ? OR v.street_raw LIKE ? OR v.reported_contractor_name LIKE ? OR p.name LIKE ? OR EXISTS(SELECT 1 FROM contractors c_name WHERE c_name.id=v.reported_contractor_id AND c_name.name LIKE ?))',

@@ -13,7 +13,7 @@ export async function GET(req: Request) {
     );
     const rows = await db
       .prepare(
-        `SELECT v.id,v.source_reference,v.source_status,v.is_closed,v.latitude,v.longitude,v.classification,p.id project_id,p.name project_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c_proj ON c_proj.id=v.project_contractor_id WHERE ${whereSQL} AND v.latitude BETWEEN 15 AND 32 AND v.longitude BETWEEN 34 AND 56 ORDER BY v.id LIMIT 10001`,
+      `SELECT v.id,v.source_reference,v.source_status,v.is_closed,v.latitude,v.longitude,v.classification,v.reported_contractor_name,v.district_raw,v.street_raw,p.id project_id,p.name project_name FROM current_violations v LEFT JOIN projects p ON p.id=v.project_id LEFT JOIN contractors c_proj ON c_proj.id=v.project_contractor_id WHERE ${whereSQL} AND v.latitude BETWEEN 15 AND 32 AND v.longitude BETWEEN 34 AND 56 ORDER BY v.id LIMIT 10001`,
       )
       .all(...params);
     if (rows.length > 10000)
@@ -44,6 +44,10 @@ export async function GET(req: Request) {
             is_closed: r.is_closed,
             project_name: r.project_name,
             classification: r.classification,
+            contractor_name: r.reported_contractor_name,
+            district: r.district_raw,
+            street: r.street_raw,
+            project_id: r.project_id,
             service_type: services.get(String(r.project_id))?.service_type || 'UNKNOWN',
           },
         })),

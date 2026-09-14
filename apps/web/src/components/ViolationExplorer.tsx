@@ -53,6 +53,9 @@ const initial = {
   program_manager: '',
   manager: '',
   source_status: '',
+  date_from: '',
+  date_to: '',
+  district: '',
   search: '',
   classification: '',
   aging: '',
@@ -70,12 +73,14 @@ export default function ViolationExplorer({
   const [filters, setFilters] = useState(initial);
   const [draft, setDraft] = useState(initial);
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(25);
   const [rows, setRows] = useState<Row[]>([]);
   const [stats, setStats] = useState<Stats | null>(null);
   const [total, setTotal] = useState(0);
   const [busy, setBusy] = useState(true);
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Row | null>(null);
+  const [contractors, setContractors] = useState<{ id: string; name: string }[]>([]);
   const query = useMemo(
     () => new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString(),
     [filters],
@@ -89,6 +94,21 @@ export default function ViolationExplorer({
     setDraft(f);
   }, []);
   useEffect(() => {
+    if (draft.search === filters.search) return;
+    const timer = window.setTimeout(() => {
+      setFilters((current) => ({ ...current, search: draft.search }));
+      setPage(1);
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [draft.search, filters.search]);
+  useEffect(() => {
+    fetch('/api/contractors').then(async (response) => {
+      if (!response.ok) return;
+      const data = await response.json();
+      setContractors(data.contractors || data.data || []);
+    }).catch(() => undefined);
+  }, []);
+  useEffect(() => {
     const controller = new AbortController();
     setBusy(true);
     setError('');
@@ -99,7 +119,7 @@ export default function ViolationExplorer({
       return d;
     };
     Promise.all([
-      get(`/api/violations?${query}&page=${page}&limit=25`),
+      get(`/api/violations?${query}&page=${page}&limit=${pageSize}`),
       get(`/api/dashboard/stats?${query}`),
     ])
       .then(([list, summary]) => {
@@ -115,7 +135,7 @@ export default function ViolationExplorer({
         }
       });
     return () => controller.abort();
-  }, [query, page]);
+  }, [query, page, pageSize]);
   const apply = (f: typeof initial) => {
     setDraft(f);
     setFilters(f);
@@ -280,6 +300,31 @@ export default function ViolationExplorer({
             </select>
           </label>
           <label>
+            <span className="label">من تاريخ</span>
+            <input type="date" className="form-control field" value={draft.date_from} onChange={(e) => setDraft({ ...draft, date_from: e.target.value })} />
+          </label>
+          <label>
+            <span className="label">إلى تاريخ</span>
+            <input type="date" className="form-control field" value={draft.date_to} onChange={(e) => setDraft({ ...draft, date_to: e.target.value })} />
+          </label>
+          <label>
+            <span className="label">الحي / المنطقة</span>
+            <input className="form-control field" value={draft.district} onChange={(e) => setDraft({ ...draft, district: e.target.value })} placeholder="اكتب اسم الحي" />
+          </label>
+          <label>
+            <span className="label">المقاول</span>
+            <select className="form-control field" value={draft.reported_contractor} onChange={(e) => setDraft({ ...draft, reported_contractor: e.target.value })}>
+              <option value="">كل المقاولين</option>
+              {contractors.map((contractor) => <option key={contractor.id} value={contractor.id}>{contractor.name}</option>)}
+            </select>
+          </label>
+          <label>
+            <span className="label">الحالات (متعدد)</span>
+            <select multiple className="form-control field min-h-24" value={draft.source_status ? draft.source_status.split(',') : []} onChange={(e) => setDraft({ ...draft, source_status: Array.from(e.target.selectedOptions, (option) => option.value).join(',') })}>
+              {(stats?.statuses || []).map((item) => <option key={item.status} value={item.status}>{item.status}</option>)}
+            </select>
+          </label>
+          <label>
             <span className="label">حالة السجل</span>
             <select
               className="form-control field"
@@ -299,6 +344,7 @@ export default function ViolationExplorer({
             <button type="button" className="btn secondary" onClick={() => apply(initial)}>
               مسح
             </button>
+            <label className="flex items-center gap-2 text-sm"><span>صفوف</span><select className="form-control field w-24" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select></label>
           </div>
         </form>
         {filters.aging && (
@@ -407,11 +453,11 @@ export default function ViolationExplorer({
               السابق
             </button>
             <span className="text-sm">
-              {page} / {Math.max(1, Math.ceil(total / 25))}
+              {page} / {Math.max(1, Math.ceil(total / pageSize))}
             </span>
             <button
               className="btn secondary"
-              disabled={page * 25 >= total || busy}
+              disabled={page * pageSize >= total || busy}
               onClick={() => setPage((p) => p + 1)}
             >
               التالي

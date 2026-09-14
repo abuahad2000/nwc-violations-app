@@ -97,6 +97,14 @@ button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
+.map-popup-content { min-width: 245px; color: #173f43; font-family: var(--font-sans); }
+.map-popup-content h4 { margin: 0 0 8px; font-size: 16px; font-weight: 800; }
+.map-popup-status { display: inline-block; border-radius: 999px; padding: 4px 9px; color: white; font-size: 12px; font-weight: 700; }
+.map-popup-content dl { display: grid; grid-template-columns: 72px 1fr; gap: 5px 8px; margin: 12px 0; font-size: 12px; }
+.map-popup-content dt { color: #64748b; }
+.map-popup-content dd { margin: 0; font-weight: 700; overflow-wrap: anywhere; }
+.map-popup-export { display: block; border-radius: 8px; background: #0b7285; padding: 8px 10px; color: #fff; text-align: center; font-size: 12px; font-weight: 700; text-decoration: none; }
+.map-popup-muted { display: block; color: #64748b; font-size: 12px; }
 :focus-visible {
   outline: 3px solid #0e7c86;
   outline-offset: 3px;
