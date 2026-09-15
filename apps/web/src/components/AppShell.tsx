@@ -31,6 +31,71 @@ const links = [
   },
 ];
 
+function SidebarNav({
+  user,
+  pathname,
+  onNavigate,
+  onLogout,
+}: {
+  user: SessionUser | null;
+  pathname: string;
+  onNavigate?: () => void;
+  onLogout: () => void;
+}) {
+  return (
+    <div className="sidebar flex h-full flex-col">
+      {/* معلومات المستخدم */}
+      <div className="mb-6 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 p-4 shadow-md">
+        <div className="flex items-center gap-3">
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white shadow-inner">
+            {user?.name?.slice(0, 1) || 'م'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate font-bold text-white">{user?.name || 'المستخدم'}</p>
+            <p className="text-xs text-blue-100">مدير النظام</p>
+          </div>
+        </div>
+      </div>
+
+      {/* القائمة */}
+      <nav className="flex-1 space-y-1">
+        {links.map(({ href, label, icon: Icon, color }) => {
+          const isActive = pathname === href;
+          return (
+            <Link
+              key={href}
+              href={href}
+              onClick={onNavigate}
+              className={`sidebar-link ${isActive ? 'active' : ''}`}
+            >
+              <div
+                className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-white ${
+                  isActive ? 'bg-white/25 shadow-sm' : color
+                }`}
+              >
+                <Icon size={18} />
+              </div>
+              <span className="flex-1 truncate">{label}</span>
+            </Link>
+          );
+        })}
+      </nav>
+
+      {/* تسجيل الخروج */}
+      <button
+        type="button"
+        onClick={onLogout}
+        className="sidebar-link mt-4 w-full text-rose-200 hover:bg-rose-500/20 hover:text-white"
+      >
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-500/20 text-rose-300">
+          <LogOut size={18} />
+        </div>
+        <span>تسجيل الخروج</span>
+      </button>
+    </div>
+  );
+}
+
 export default function AppShell({ children }: { children: React.ReactNode }) {
   const router = useRouter();
   const [user, setUser] = useState<SessionUser | null>(null);
@@ -52,6 +117,16 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       })
       .catch(() => setError('تعذر الاتصال بالخادم'));
   }, [router]);
+
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      toast('تم تسجيل الخروج', 'success');
+      router.replace('/login');
+    } catch {
+      toast('تعذر تسجيل الخروج', 'error');
+    }
+  };
 
   if (error) {
     return (
@@ -76,64 +151,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  const SidebarContent = () => (
-    <div className="sidebar flex h-full flex-col">
-      {/* معلومات المستخدم */}
-      <div className="mb-6 rounded-xl bg-gradient-to-br from-blue-600 to-emerald-500 p-4">
-        <div className="flex items-center gap-3">
-          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-white/20 text-xl font-bold text-white">
-            {user?.name?.slice(0, 1)}
-          </div>
-          <div>
-            <p className="font-bold text-white">{user?.name}</p>
-            <p className="text-xs text-blue-100">مدير النظام</p>
-          </div>
-        </div>
-      </div>
-
-      {/* القائمة */}
-      <nav className="flex-1 space-y-1">
-        {links.map(({ href, label, icon: Icon, color }) => {
-          const isActive = pathname === href;
-          return (
-            <Link
-              key={href}
-              href={href}
-              onClick={() => setSidebarOpen(false)}
-              className={`sidebar-link ${isActive ? 'active' : ''}`}
-            >
-              <div
-                className={`flex h-8 w-8 items-center justify-center rounded-lg ${isActive ? 'bg-white/20' : color}`}
-              >
-                <Icon size={18} />
-              </div>
-              <span className="flex-1">{label}</span>
-            </Link>
-          );
-        })}
-      </nav>
-
-      {/* تسجيل الخروج */}
-      <button
-        onClick={async () => {
-          await fetch('/api/auth/logout', { method: 'POST' });
-          toast('تم تسجيل الخروج', 'success');
-          router.replace('/login');
-        }}
-        className="sidebar-link mt-4"
-      >
-        <LogOut size={18} />
-        <span>تسجيل الخروج</span>
-      </button>
-    </div>
-  );
-
   return (
     <div className="min-h-screen">
       {/* الهيدر */}
       <header className="header sticky top-0 z-40 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => setSidebarOpen(true)} className="lg:hidden">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="lg:hidden p-1 rounded-lg hover:bg-slate-100"
+            aria-label="فتح القائمة"
+          >
             <Menu className="h-6 w-6 text-slate-700" />
           </button>
           <div className="flex items-center gap-2">
@@ -152,28 +180,46 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <div className="mx-auto max-w-7xl px-4 py-6 lg:px-8">
         <div className="flex gap-6">
           {/* الشريط الجانبي - سطح المكتب */}
-          <aside className="hidden w-64 shrink-0 lg:block">
-            <SidebarContent />
+          <aside
+            data-sidebar="desktop"
+            className="sidebar-desktop relative z-30 hidden w-64 shrink-0 lg:block"
+            aria-label="القائمة الجانبية الرئيسية"
+          >
+            <SidebarNav
+              user={user}
+              pathname={pathname}
+              onLogout={handleLogout}
+            />
           </aside>
 
           {/* الشريط الجانبي - الجوال */}
           {sidebarOpen && (
             <div className="fixed inset-0 z-50 lg:hidden">
-              <div className="absolute inset-0 bg-black/50" onClick={() => setSidebarOpen(false)} />
-              <div className="absolute right-0 top-0 h-full w-72">
+              <div
+                className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+                onClick={() => setSidebarOpen(false)}
+              />
+              <div className="absolute right-0 top-0 h-full w-72 p-4 bg-slate-900 shadow-2xl">
                 <button
+                  type="button"
                   onClick={() => setSidebarOpen(false)}
-                  className="absolute left-4 top-4 text-white"
+                  className="absolute left-4 top-4 text-white hover:text-slate-300 p-1"
+                  aria-label="إغلاق القائمة"
                 >
                   <X size={24} />
                 </button>
-                <SidebarContent />
+                <SidebarNav
+                  user={user}
+                  pathname={pathname}
+                  onNavigate={() => setSidebarOpen(false)}
+                  onLogout={handleLogout}
+                />
               </div>
             </div>
           )}
 
           {/* المحتوى الرئيسي */}
-          <main className="flex-1 animate-fade-in">{children}</main>
+          <main className="flex-1 min-w-0 animate-fade-in relative z-10">{children}</main>
         </div>
       </div>
     </div>

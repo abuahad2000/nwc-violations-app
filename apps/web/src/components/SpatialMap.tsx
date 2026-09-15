@@ -21,7 +21,7 @@ function popupColor(status: string): string {
 }
 
 // دالة لإنشاء الـ Style بناءً على النمط المختار
-function getMapStyle(basemap: 'osm' | 'voyager' | 'dark'): maplibregl.Style {
+function getMapStyle(initialBasemap: 'osm' | 'voyager' | 'dark' = 'voyager'): maplibregl.StyleSpecification {
   return {
     version: 8,
     sources: {
@@ -36,15 +36,27 @@ function getMapStyle(basemap: 'osm' | 'voyager' | 'dark'): maplibregl.Style {
       },
       voyager: {
         type: 'raster',
-        tiles: ['https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'],
+        tiles: [
+          'https://a.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+          'https://d.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}.png',
+        ],
         tileSize: 256,
-        attribution: '© OpenStreetMap · © CARTO',
+        maxzoom: 19,
+        attribution: '© OpenStreetMap contributors · © CARTO',
       },
       dark: {
         type: 'raster',
-        tiles: ['https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
+        tiles: [
+          'https://a.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          'https://b.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          'https://c.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+          'https://d.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png',
+        ],
         tileSize: 256,
-        attribution: '© OpenStreetMap · © CARTO',
+        maxzoom: 19,
+        attribution: '© OpenStreetMap contributors · © CARTO',
       },
     },
     layers: [
@@ -53,19 +65,21 @@ function getMapStyle(basemap: 'osm' | 'voyager' | 'dark'): maplibregl.Style {
         id: 'osm-streets',
         type: 'raster',
         source: 'osm',
+        layout: { visibility: initialBasemap === 'osm' ? 'visible' : 'none' },
         paint: { 'raster-saturation': 0.2, 'raster-contrast': 0.1 },
       },
       {
         id: 'voyager-basemap',
         type: 'raster',
         source: 'voyager',
-        layout: { visibility: basemap === 'voyager' ? 'visible' : 'none' },
+        layout: { visibility: initialBasemap === 'voyager' ? 'visible' : 'none' },
+        paint: { 'raster-saturation': 0.2, 'raster-contrast': 0.1 },
       },
       {
         id: 'dark-basemap',
         type: 'raster',
         source: 'dark',
-        layout: { visibility: basemap === 'dark' ? 'visible' : 'none' },
+        layout: { visibility: initialBasemap === 'dark' ? 'visible' : 'none' },
       },
     ],
   };
@@ -108,7 +122,7 @@ export default function SpatialMap({
 
     const m = new maplibregl.Map({
       container: host.current,
-      style: getMapStyle(basemap),
+      style: getMapStyle('voyager'),
       center: [46.68, 24.72],
       zoom: 9,
       attributionControl: { compact: true },
@@ -134,20 +148,25 @@ export default function SpatialMap({
       m.remove();
       map.current = null;
     };
-  }, []); // ✅ مهم: فارغ لإنشاء الخريطة مرة واحدة فقط
+  }, []); // ✅ فارغ لإنشاء الخريطة مرة واحدة فقط
 
-  // ✅ تحديث نمط الخريطة عند تغيير basemap
+  // ✅ تحديث نمط الخريطة فوراً عند تغيير basemap عبر إظهار/إخفاء الطبقات
   useEffect(() => {
-    if (!map.current) return;
+    if (!ready || !map.current) return;
+    const m = map.current;
 
-    // تغيير الـ style بالكامل
-    map.current.setStyle(getMapStyle(basemap));
+    const layers: { id: string; visible: boolean }[] = [
+      { id: 'voyager-basemap', visible: basemap === 'voyager' },
+      { id: 'osm-streets', visible: basemap === 'osm' },
+      { id: 'dark-basemap', visible: basemap === 'dark' },
+    ];
 
-    // إعادة تحميل البيانات بعد تغيير الـ style
-    map.current.once('style.load', () => {
-      setReady(false); // إعادة تحميل البيانات
-    });
-  }, [basemap]);
+    for (const { id, visible } of layers) {
+      if (m.getLayer(id)) {
+        m.setLayoutProperty(id, 'visibility', visible ? 'visible' : 'none');
+      }
+    }
+  }, [basemap, ready]);
 
   // تحميل البيانات
   useEffect(() => {
@@ -354,7 +373,7 @@ export default function SpatialMap({
           onChange={(e) => setBasemap(e.target.value as typeof basemap)}
           className="input-field w-auto h-10"
         >
-          <option value="voyager">️ خريطة واضحة (موصى به)</option>
+          <option value="voyager">🗺️ خريطة واضحة (Voyager - موصى به)</option>
           <option value="osm">🌍 OpenStreetMap كلاسيكي</option>
           <option value="dark">🌙 الوضع الداكن</option>
         </select>

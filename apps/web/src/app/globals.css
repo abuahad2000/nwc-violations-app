@@ -228,7 +228,29 @@ body {
   animation: fadeIn 0.3s ease-out;
 }
 
-/* === التجاوب === */
+/* === التجاوب والشريط الجانبي لسطح المكتب === */
+@media (min-width: 1024px) {
+  .sidebar-desktop,
+  aside.sidebar-desktop,
+  aside[data-sidebar="desktop"],
+  aside.w-64 {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    position: relative !important;
+    z-index: 30 !important;
+    width: 16rem !important;
+    flex-shrink: 0 !important;
+  }
+
+  .sidebar-desktop .sidebar {
+    position: sticky !important;
+    top: 5.5rem !important;
+    max-height: calc(100vh - 7rem) !important;
+    overflow-y: auto !important;
+  }
+}
+
 @media (max-width: 768px) {
   .sidebar {
     position: fixed;
@@ -240,22 +262,15 @@ body {
     border-radius: 0;
   }
 }
-/* === إصلاح الخريطة - جعلها أوضح === */
-.maplibregl-map {
-  filter: contrast(1.1) saturate(1.2);
-}
 
-.maplibregl-canvas {
-  background: #e8f4f8 !important;
-}
-
-/* === إصلاح الشريط الجانبي - إجبار الظهور === */
+/* === مظهر الشريط الجانبي الداكن === */
 .sidebar {
   background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
   color: white !important;
   border-radius: 1rem !important;
   padding: 1.5rem !important;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08);
   min-height: 500px !important;
 }
 
@@ -270,6 +285,7 @@ body {
   transition: all 0.2s !important;
   margin-bottom: 0.5rem !important;
   cursor: pointer !important;
+  font-weight: 500;
 }
 
 .sidebar-link:hover {
@@ -283,25 +299,17 @@ body {
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
 }
 
-/* إجبار الشريط الجانبي على الظهور في الشاشات الكبيرة */
-@media (min-width: 1024px) {
-  .app-navigation,
-  aside.w-64,
-  aside.w-72 {
-    display: block !important;
-  }
+/* === إصلاح الخريطة - جعلها أوضح وأكثر تشبعاً وتبايناً === */
+.maplibregl-map {
+  filter: contrast(1.1) saturate(1.2);
 }
-/* === إجبار الشريط الجانبي الرئيسي على الظهور === */
-@media (min-width: 1024px) {
-  aside.w-64,
-  aside.w-72,
-  .app-navigation {
-    display: block !important;
-    visibility: visible !important;
-  }
+
+.maplibregl-canvas {
+  background: #e8f4f8 !important;
 }
 
 /* تحسين مظهر القائمة الجانبية الداخلية للخريطة */
 aside.max-h-\[550px\] {
-  border-right: 1px solid #e2e8f0;
+  border-inline-start: 1px solid #e2e8f0;
 }
+
