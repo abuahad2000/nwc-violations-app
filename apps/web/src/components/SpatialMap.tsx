@@ -20,6 +20,57 @@ function popupColor(status: string): string {
   return '#dc2626';
 }
 
+// دالة لإنشاء الـ Style بناءً على النمط المختار
+function getMapStyle(basemap: 'osm' | 'voyager' | 'dark'): maplibregl.Style {
+  return {
+    version: 8,
+    sources: {
+      osm: {
+        type: 'raster',
+        tiles: [
+          process.env.NEXT_PUBLIC_OSM_TILE_URL || 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+        ],
+        tileSize: 256,
+        maxzoom: 19,
+        attribution: '© OpenStreetMap contributors',
+      },
+      voyager: {
+        type: 'raster',
+        tiles: ['https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap · © CARTO',
+      },
+      dark: {
+        type: 'raster',
+        tiles: ['https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
+        tileSize: 256,
+        attribution: '© OpenStreetMap · © CARTO',
+      },
+    },
+    layers: [
+      { id: 'background', type: 'background', paint: { 'background-color': '#f8fafc' } },
+      {
+        id: 'osm-streets',
+        type: 'raster',
+        source: 'osm',
+        paint: { 'raster-saturation': 0.2, 'raster-contrast': 0.1 },
+      },
+      {
+        id: 'voyager-basemap',
+        type: 'raster',
+        source: 'voyager',
+        layout: { visibility: basemap === 'voyager' ? 'visible' : 'none' },
+      },
+      {
+        id: 'dark-basemap',
+        type: 'raster',
+        source: 'dark',
+        layout: { visibility: basemap === 'dark' ? 'visible' : 'none' },
+      },
+    ],
+  };
+}
+
 export default function SpatialMap({
   query,
   onSelect,
@@ -45,62 +96,19 @@ export default function SpatialMap({
   const [ready, setReady] = useState(false);
   const [count, setCount] = useState<number | null>(null);
   const [rendered, setRendered] = useState(false);
-
-  // التغيير الأول: جعل voyager هو الافتراضي لأنه الأوضح للشوارع
   const [basemap, setBasemap] = useState<'osm' | 'voyager' | 'dark'>('voyager');
 
   useEffect(() => {
     select.current = onSelect;
   }, [onSelect]);
 
+  // إنشاء الخريطة
   useEffect(() => {
     if (!host.current) return;
+
     const m = new maplibregl.Map({
       container: host.current,
-      style: {
-        version: 8,
-        sources: {
-          osm: {
-            type: 'raster',
-            tiles: [
-              process.env.NEXT_PUBLIC_OSM_TILE_URL ||
-                'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            ],
-            tileSize: 256,
-            maxzoom: 19,
-            attribution: '© OpenStreetMap contributors',
-          },
-          voyager: {
-            type: 'raster',
-            tiles: ['https://{a-c}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap · © CARTO',
-          },
-          dark: {
-            type: 'raster',
-            tiles: ['https://{a-c}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'],
-            tileSize: 256,
-            attribution: '© OpenStreetMap · © CARTO',
-          },
-        },
-        layers: [
-          { id: 'background', type: 'background', paint: { 'background-color': '#f8fafc' } },
-          {
-            id: 'osm-streets',
-            type: 'raster',
-            source: 'osm',
-            // التغيير الثاني: إزالة التشبع السلبي لجعل الخريطة واضحة وملونة
-            paint: { 'raster-saturation': 0, 'raster-contrast': 0.1 },
-          },
-          {
-            id: 'voyager-basemap',
-            type: 'raster',
-            source: 'voyager',
-            layout: { visibility: 'none' },
-          },
-          { id: 'dark-basemap', type: 'raster', source: 'dark', layout: { visibility: 'none' } },
-        ],
-      },
+      style: getMapStyle(basemap),
       center: [46.68, 24.72],
       zoom: 9,
       attributionControl: { compact: true },
@@ -115,15 +123,33 @@ export default function SpatialMap({
       m.resize();
       setReady(true);
     });
-    m.on('error', () => setError('تعذر عرض طبقة الخريطة'));
+
+    m.on('error', (e) => {
+      console.error('Map error:', e);
+      setError('تعذر عرض طبقة الخريطة');
+    });
 
     return () => {
       observer.disconnect();
       m.remove();
       map.current = null;
     };
-  }, []);
+  }, []); // ✅ مهم: فارغ لإنشاء الخريطة مرة واحدة فقط
 
+  // ✅ تحديث نمط الخريطة عند تغيير basemap
+  useEffect(() => {
+    if (!map.current) return;
+
+    // تغيير الـ style بالكامل
+    map.current.setStyle(getMapStyle(basemap));
+
+    // إعادة تحميل البيانات بعد تغيير الـ style
+    map.current.once('style.load', () => {
+      setReady(false); // إعادة تحميل البيانات
+    });
+  }, [basemap]);
+
+  // تحميل البيانات
   useEffect(() => {
     if (!ready || !map.current) return;
     const controller = new AbortController();
@@ -297,18 +323,6 @@ export default function SpatialMap({
     return () => controller.abort();
   }, [query, ready, service, status]);
 
-  useEffect(() => {
-    if (!ready || !map.current) return;
-    const m = map.current;
-    for (const id of ['osm-streets', 'voyager-basemap', 'dark-basemap']) {
-      m.setLayoutProperty(
-        id,
-        'visibility',
-        id === `${basemap === 'osm' ? 'osm-streets' : `${basemap}-basemap`}` ? 'visible' : 'none',
-      );
-    }
-  }, [basemap, ready]);
-
   return (
     <section className="card-glass overflow-hidden" aria-label="خريطة الخدمات والبلاغات">
       <header className="flex flex-wrap items-center justify-between gap-3 bg-gradient-to-r from-slate-800 to-slate-900 p-5 text-white">
@@ -337,12 +351,12 @@ export default function SpatialMap({
         <select
           id="basemap-theme"
           value={basemap}
-          onChange={(event) => setBasemap(event.target.value as typeof basemap)}
+          onChange={(e) => setBasemap(e.target.value as typeof basemap)}
           className="input-field w-auto h-10"
         >
-          <option value="voyager">خريطة واضحة (موصى به)</option>
-          <option value="osm">OpenStreetMap كلاسيكي</option>
-          <option value="dark">الوضع الداكن</option>
+          <option value="voyager">️ خريطة واضحة (موصى به)</option>
+          <option value="osm">🌍 OpenStreetMap كلاسيكي</option>
+          <option value="dark">🌙 الوضع الداكن</option>
         </select>
       </div>
 
@@ -418,7 +432,7 @@ export default function SpatialMap({
           </div>
           {visiblePoints.length > 30 && (
             <p className="mt-3 text-center text-xs text-slate-500">
-              عرض أول ٣٠ بلاغًا من {visiblePoints.length.toLocaleString('ar-SA')}
+              عرض أول ٠ بلاغًا من {visiblePoints.length.toLocaleString('ar-SA')}
             </p>
           )}
           {visiblePoints.length === 0 && (
