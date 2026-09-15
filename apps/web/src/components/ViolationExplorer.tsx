@@ -1,17 +1,37 @@
 'use client';
+
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { useReactTable, getCoreRowModel, flexRender, type ColumnDef } from '@tanstack/react-table';
-import { Download, Search, ArrowRight, ArrowLeft, MapPin } from 'lucide-react';
+import {
+  Download,
+  Search,
+  ArrowRight,
+  ArrowLeft,
+  MapPin,
+  Filter,
+  X,
+  FileText,
+  Clock,
+  Briefcase,
+  CheckCircle2,
+} from 'lucide-react';
 import AppShell from './AppShell';
 import TaskPanel from './TaskPanel';
 import ManagerCharts from './ManagerCharts';
 import type { ManagerSummary, StatusCount } from '@/lib/domain/manager';
 import { Sheet } from './ui/sheet';
+
 const SpatialMap = dynamic(() => import('./SpatialMap'), {
   ssr: false,
-  loading: () => <p className="p-6">جارٍ تحميل الخريطة…</p>,
+  loading: () => (
+    <div className="surface rounded-2xl p-12 flex flex-col items-center justify-center text-slate-500">
+      <Clock className="h-8 w-8 mb-3 animate-pulse text-blue-500" />
+      <p>جارٍ تحميل الخريطة التشغيلية…</p>
+    </div>
+  ),
 });
+
 type Row = {
   updated_at: string;
   id: string;
@@ -29,6 +49,7 @@ type Row = {
   project_manager_name?: string;
   current_action_owner_id?: string;
 };
+
 type Stats = {
   managers: ManagerSummary[];
   statuses: StatusCount[];
@@ -42,11 +63,13 @@ type Stats = {
   age_181_plus: number;
   last_batch: { created_at: string } | null;
 };
+
 const labels: Record<string, string> = {
   INSIDE_PROJECT_BOUNDARY: 'داخل المشروع',
   OUTSIDE_PROJECT_BOUNDARY: 'خارج المشروع · الصيانة',
   UNDER_REVIEW: 'تحتاج مراجعة',
 };
+
 const initial = {
   executive: '',
   program_manager: '',
@@ -64,6 +87,7 @@ const initial = {
   project_contractor: '',
   action_owner: '',
 };
+
 export default function ViolationExplorer({
   mode = 'dashboard',
 }: {
@@ -80,10 +104,12 @@ export default function ViolationExplorer({
   const [error, setError] = useState('');
   const [selected, setSelected] = useState<Row | null>(null);
   const [contractors, setContractors] = useState<{ id: string; name: string }[]>([]);
+
   const query = useMemo(
     () => new URLSearchParams(Object.entries(filters).filter(([, v]) => v)).toString(),
     [filters],
   );
+
   useEffect(() => {
     const url = new URL(window.location.href);
     const f = { ...initial };
@@ -92,6 +118,7 @@ export default function ViolationExplorer({
     setFilters(f);
     setDraft(f);
   }, []);
+
   useEffect(() => {
     if (draft.search === filters.search) return;
     const timer = window.setTimeout(() => {
@@ -100,13 +127,17 @@ export default function ViolationExplorer({
     }, 300);
     return () => window.clearTimeout(timer);
   }, [draft.search, filters.search]);
+
   useEffect(() => {
-    fetch('/api/contractors').then(async (response) => {
-      if (!response.ok) return;
-      const data = await response.json();
-      setContractors(data.contractors || data.data || []);
-    }).catch(() => undefined);
+    fetch('/api/contractors')
+      .then(async (response) => {
+        if (!response.ok) return;
+        const data = await response.json();
+        setContractors(data.contractors || data.data || []);
+      })
+      .catch(() => undefined);
   }, []);
+
   useEffect(() => {
     const controller = new AbortController();
     setBusy(true);
@@ -135,6 +166,7 @@ export default function ViolationExplorer({
       });
     return () => controller.abort();
   }, [query, page, pageSize]);
+
   const apply = (f: typeof initial) => {
     setDraft(f);
     setFilters(f);
@@ -145,6 +177,7 @@ export default function ViolationExplorer({
       `${window.location.pathname}?${new URLSearchParams(Object.entries(f).filter(([, v]) => v))}`,
     );
   };
+
   const details = async (id: string) => {
     try {
       const r = await fetch(`/api/violations/${encodeURIComponent(id)}`);
@@ -155,15 +188,17 @@ export default function ViolationExplorer({
       setError(e instanceof Error ? e.message : 'تعذر عرض التفاصيل');
     }
   };
+
   const columns: ColumnDef<Row>[] = [
     {
       accessorKey: 'source_reference',
       header: 'رقم البلاغ',
       cell: (c) => (
         <button
-          className="font-semibold text-teal-800 underline-offset-4 hover:underline"
+          className="font-bold text-blue-700 hover:text-blue-900 underline-offset-4 hover:underline transition-colors flex items-center gap-1"
           onClick={() => details(c.row.original.id)}
         >
+          <FileText size={14} />
           <bdi>{String(c.getValue())}</bdi>
         </button>
       ),
@@ -171,122 +206,190 @@ export default function ViolationExplorer({
     {
       accessorKey: 'district_raw',
       header: 'الحي',
-      cell: (c) => String(c.getValue() || 'غير محدد'),
+      cell: (c) => <span className="text-slate-700">{String(c.getValue() || 'غير محدد')}</span>,
     },
     {
       accessorKey: 'reported_contractor_name',
-      header: 'المقاول في المصدر',
-      cell: (c) => String(c.getValue() || 'غير محدد'),
+      header: 'المقاول',
+      cell: (c) => <span className="text-slate-700">{String(c.getValue() || 'غير محدد')}</span>,
     },
     {
       accessorKey: 'classification',
       header: 'التصنيف',
-      cell: (c) => (
-        <span
-          className={`whitespace-nowrap rounded-full px-3 py-1 text-xs ${c.getValue() === 'UNDER_REVIEW' ? 'bg-amber-50 text-amber-800' : 'bg-teal-50 text-teal-800'}`}
-        >
-          {labels[String(c.getValue())] || 'مراجعة'}
-        </span>
-      ),
+      cell: (c) => {
+        const val = String(c.getValue());
+        const isReview = val === 'UNDER_REVIEW';
+        return (
+          <span
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-xs font-semibold border ${
+              isReview
+                ? 'bg-amber-50 text-amber-800 border-amber-200'
+                : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+            }`}
+          >
+            {isReview ? <Clock size={12} /> : <CheckCircle2 size={12} />}
+            {labels[val] || 'مراجعة'}
+          </span>
+        );
+      },
     },
-    { accessorKey: 'source_status', header: 'الحالة الأصلية' },
+    {
+      accessorKey: 'source_status',
+      header: 'الحالة الأصلية',
+      cell: (c) => <span className="text-slate-600 text-sm">{String(c.getValue())}</span>,
+    },
     {
       accessorKey: 'age_days',
       header: 'عمر المفتوح',
-      cell: (c) =>
-        c.row.original.is_closed
-          ? 'مغلق'
-          : c.getValue() == null
-            ? 'غير معلوم'
-            : `${c.getValue()} يوم`,
+      cell: (c) => {
+        if (c.row.original.is_closed) return <span className="text-slate-400 text-sm">مغلق</span>;
+        if (c.getValue() == null) return <span className="text-slate-400 text-sm">غير معلوم</span>;
+        return (
+          <span className="inline-flex items-center gap-1 text-sm font-medium text-slate-700 bg-slate-100 px-2 py-1 rounded-md">
+            <Clock size={12} />
+            {c.getValue()} يوم
+          </span>
+        );
+      },
     },
   ];
-  // eslint-disable-next-line react-hooks/incompatible-library -- React Compiler is not enabled; table objects stay inside this component.
+
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: rows,
     columns,
     getCoreRowModel: getCoreRowModel(),
     manualPagination: true,
   });
-  const contractorCount = stats?.statuses.find((item) => item.status === 'تحت معالجة المقاول')?.count || 0;
-  const entityCount = stats?.statuses.find((item) => item.status === 'تحت معالجة الجهة المتعدية')?.count || 0;
+
+  const contractorCount =
+    stats?.statuses.find((item) => item.status === 'تحت معالجة المقاول')?.count || 0;
+  const entityCount =
+    stats?.statuses.find((item) => item.status === 'تحت معالجة الجهة المتعدية')?.count || 0;
+
   const cards = stats
     ? ([
-        ['إجمالي البلاغات', stats.total, {}],
-        ['تحت معالجة المقاول', contractorCount, { source_status: 'تحت معالجة المقاول' }],
-        ['تحت معالجة الجهة', entityCount, { source_status: 'تحت معالجة الجهة المتعدية' }],
-        ['تمت المعالجة', stats.closed, { open: '0' }],
+        [
+          'إجمالي البلاغات',
+          stats.total,
+          { icon: FileText, color: 'text-blue-600', bg: 'bg-blue-50' },
+        ],
+        [
+          'تحت معالجة المقاول',
+          contractorCount,
+          { icon: Briefcase, color: 'text-amber-600', bg: 'bg-amber-50' },
+        ],
+        [
+          'تحت معالجة الجهة',
+          entityCount,
+          { icon: Briefcase, color: 'text-purple-600', bg: 'bg-purple-50' },
+        ],
+        [
+          'تمت المعالجة',
+          stats.closed,
+          { icon: CheckCircle2, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+        ],
       ] as const)
     : [];
+
   return (
     <AppShell>
       <div className="space-y-6">
-        <div className="dashboard-hero flex flex-wrap items-center justify-between gap-4">
+        {/* === Hero Section === */}
+        <div className="dashboard-hero flex flex-wrap items-center justify-between gap-4 p-6 rounded-2xl">
           <div>
-            <p className="mb-1 text-sm text-teal-200">
-              مساحة العمل / {mode === 'map' ? 'الخريطة' : 'التعديات'}
+            <p className="mb-1 text-sm font-medium text-blue-100/80 flex items-center gap-2">
+              <MapPin size={14} />
+              مساحة العمل / {mode === 'map' ? 'الخريطة التشغيلية' : 'لوحة المتابعة'}
             </p>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold text-white">
               {mode === 'dashboard'
-                ? 'لوحة المتابعة'
+                ? 'لوحة متابعة التعديات'
                 : mode === 'map'
                   ? 'الخريطة التشغيلية'
                   : 'سجل التعديات'}
             </h2>
-            <p className="mt-2 text-sm text-slate-500">
+            <p className="mt-2 text-sm text-blue-100/70">
               {stats?.last_batch
-                ? `آخر دفعة: ${new Date(stats.last_batch.created_at).toLocaleString('ar-SA')}`
-                : 'متابعة الحالة والموقع والإجراء'}
+                ? `آخر تحديث للبيانات: ${new Date(stats.last_batch.created_at).toLocaleString('ar-SA')}`
+                : 'متابعة الحالة والموقع والإجراء بشكل فوري'}
             </p>
           </div>
-          <a className="btn secondary" href={`/api/reports/export/excel?${query}`}>
+          <a
+            className="secondary flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-semibold transition-all hover:bg-white/20"
+            href={`/api/reports/export/excel?${query}`}
+          >
             <Download size={18} />
             تصدير النتائج
           </a>
         </div>
+
+        {/* === Error Alert === */}
         {error && (
-          <p role="alert" className="notice-error">
-            {error}
-          </p>
+          <div
+            className="bg-red-50 border border-red-200 text-red-800 rounded-xl p-4 flex items-center gap-3"
+            role="alert"
+          >
+            <X size={20} className="shrink-0" />
+            <span className="font-medium">{error}</span>
+          </div>
         )}
+
+        {/* === Stats Cards === */}
         {mode === 'dashboard' && (
-          <div className="grid grid-cols-2 gap-3 xl:grid-cols-4">
-            {cards.map(([label, value, filter]) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            {cards.map(([label, value, meta]) => (
               <button
                 key={label}
-                className="metric-card surface relative overflow-hidden p-5 text-start transition hover:-translate-y-0.5 hover:border-teal-500 hover:shadow-md"
+                className="metric-card surface relative overflow-hidden p-5 text-start group"
                 onClick={() =>
-                  apply({ ...filters, classification: '', aging: '', open: '', ...filter })
+                  apply({
+                    ...filters,
+                    classification: '',
+                    aging: '',
+                    open: '',
+                    source_status: label === 'إجمالي البلاغات' ? '' : label,
+                  })
                 }
               >
-                <span className="text-sm text-slate-500">{label}</span>
-                <strong className="mt-3 block text-3xl tabular-nums">
+                <div
+                  className={`absolute top-4 left-4 p-2 rounded-lg ${meta.bg} ${meta.color} opacity-80 group-hover:opacity-100 transition-opacity`}
+                >
+                  <meta.icon size={20} />
+                </div>
+                <span className="text-sm font-medium text-slate-500 block mb-2">{label}</span>
+                <strong className="text-3xl font-bold text-slate-800 tabular-nums tracking-tight">
                   {value.toLocaleString('ar-SA')}
                 </strong>
               </button>
             ))}
           </div>
         )}
+
+        {/* === Filter Form === */}
         <form
-          className="card surface grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-5"
+          className="surface p-6 rounded-2xl grid gap-4 sm:grid-cols-2 xl:grid-cols-4"
           onSubmit={(e) => {
             e.preventDefault();
             apply(draft);
           }}
         >
-          <label className="xl:col-span-2">
-            <span className="label">البحث</span>
+          <div className="xl:col-span-2">
+            <label className="label flex items-center gap-2">
+              <Search size={14} /> البحث السريع
+            </label>
             <input
-              className="form-control field"
+              className="field w-full"
               value={draft.search}
               onChange={(e) => setDraft({ ...draft, search: e.target.value })}
-              placeholder="رقم البلاغ، المقاول، الحي أو المشروع"
+              placeholder="رقم البلاغ، المقاول، الحي أو المشروع..."
             />
-          </label>
-          <label>
-            <span className="label">التصنيف المكاني</span>
+          </div>
+
+          <div>
+            <label className="label">التصنيف المكاني</label>
             <select
-              className="form-control field"
+              className="field w-full"
               value={draft.classification}
               onChange={(e) => setDraft({ ...draft, classification: e.target.value })}
             >
@@ -297,36 +400,12 @@ export default function ViolationExplorer({
                 </option>
               ))}
             </select>
-          </label>
-          <label>
-            <span className="label">من تاريخ</span>
-            <input type="date" className="form-control field" value={draft.date_from} onChange={(e) => setDraft({ ...draft, date_from: e.target.value })} />
-          </label>
-          <label>
-            <span className="label">إلى تاريخ</span>
-            <input type="date" className="form-control field" value={draft.date_to} onChange={(e) => setDraft({ ...draft, date_to: e.target.value })} />
-          </label>
-          <label>
-            <span className="label">الحي / المنطقة</span>
-            <input className="form-control field" value={draft.district} onChange={(e) => setDraft({ ...draft, district: e.target.value })} placeholder="اكتب اسم الحي" />
-          </label>
-          <label>
-            <span className="label">المقاول</span>
-            <select className="form-control field" value={draft.reported_contractor} onChange={(e) => setDraft({ ...draft, reported_contractor: e.target.value })}>
-              <option value="">كل المقاولين</option>
-              {contractors.map((contractor) => <option key={contractor.id} value={contractor.id}>{contractor.name}</option>)}
-            </select>
-          </label>
-          <label>
-            <span className="label">الحالات (متعدد)</span>
-            <select multiple className="form-control field min-h-24" value={draft.source_status ? draft.source_status.split(',') : []} onChange={(e) => setDraft({ ...draft, source_status: Array.from(e.target.selectedOptions, (option) => option.value).join(',') })}>
-              {(stats?.statuses || []).map((item) => <option key={item.status} value={item.status}>{item.status}</option>)}
-            </select>
-          </label>
-          <label>
-            <span className="label">حالة السجل</span>
+          </div>
+
+          <div>
+            <label className="label">حالة السجل</label>
             <select
-              className="form-control field"
+              className="field w-full"
               value={draft.open}
               onChange={(e) => setDraft({ ...draft, open: e.target.value })}
             >
@@ -334,38 +413,101 @@ export default function ViolationExplorer({
               <option value="1">مفتوح</option>
               <option value="0">مغلق</option>
             </select>
-          </label>
-          <div className="flex items-end gap-2">
-            <button className="btn btn-primary primary" disabled={busy}>
+          </div>
+
+          <div>
+            <label className="label">من تاريخ</label>
+            <input
+              type="date"
+              className="field w-full"
+              value={draft.date_from}
+              onChange={(e) => setDraft({ ...draft, date_from: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="label">إلى تاريخ</label>
+            <input
+              type="date"
+              className="field w-full"
+              value={draft.date_to}
+              onChange={(e) => setDraft({ ...draft, date_to: e.target.value })}
+            />
+          </div>
+
+          <div>
+            <label className="label">الحي / المنطقة</label>
+            <input
+              className="field w-full"
+              value={draft.district}
+              onChange={(e) => setDraft({ ...draft, district: e.target.value })}
+              placeholder="اكتب اسم الحي"
+            />
+          </div>
+
+          <div>
+            <label className="label">المقاول</label>
+            <select
+              className="field w-full"
+              value={draft.reported_contractor}
+              onChange={(e) => setDraft({ ...draft, reported_contractor: e.target.value })}
+            >
+              <option value="">كل المقاولين</option>
+              {contractors.map((contractor) => (
+                <option key={contractor.id} value={contractor.id}>
+                  {contractor.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="sm:col-span-2 xl:col-span-4 flex flex-wrap items-end gap-3 pt-2 border-t border-slate-100 mt-2">
+            <button className="primary flex items-center gap-2" disabled={busy}>
               <Search size={18} />
-              تطبيق
+              تطبيق الفلاتر
             </button>
-            <button type="button" className="btn secondary" onClick={() => apply(initial)}>
-              مسح
+            <button
+              type="button"
+              className="secondary flex items-center gap-2"
+              onClick={() => apply(initial)}
+            >
+              <X size={18} />
+              مسح الكل
             </button>
-            <label className="flex items-center gap-2 text-sm"><span>صفوف</span><select className="form-control field w-24" value={pageSize} onChange={(e) => { setPageSize(Number(e.target.value)); setPage(1); }}><option value={10}>10</option><option value={25}>25</option><option value={50}>50</option><option value={100}>100</option></select></label>
+            <div className="mr-auto flex items-center gap-2 text-sm text-slate-600 bg-slate-50 px-3 py-2 rounded-lg border border-slate-200">
+              <span>عدد الصفوف:</span>
+              <select
+                className="bg-transparent font-semibold outline-none cursor-pointer"
+                value={pageSize}
+                onChange={(e) => {
+                  setPageSize(Number(e.target.value));
+                  setPage(1);
+                }}
+              >
+                <option value={10}>10</option>
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+              </select>
+            </div>
           </div>
         </form>
-        {filters.aging && (
-          <p className="text-sm">
-            فلتر عمر المفتوح: <bdi>{filters.aging}</bdi> يوم{' '}
-            <button className="btn secondary ms-2" onClick={() => apply({ ...filters, aging: '' })}>
-              إزالة
-            </button>
-          </p>
-        )}
+
+        {/* === Active Filters Chips === */}
         {(filters.executive ||
           filters.program_manager ||
           filters.manager ||
           filters.source_status) && (
-          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-teal-100 bg-teal-50 p-3 text-sm text-teal-900">
-            <span>
-              تصفية الشارت: {filters.executive} {filters.program_manager}{' '}
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50/50 p-3 text-sm text-blue-900 backdrop-blur-sm">
+            <Filter size={16} className="shrink-0" />
+            <span className="font-medium">تصفية نشطة:</span>
+            <span className="opacity-80">
+              {filters.executive} {filters.program_manager}{' '}
               {filters.manager === '__unassigned__' ? 'بلا مدير مرتبط' : filters.manager}{' '}
               {filters.source_status}
             </span>
             <button
-              className="btn secondary"
+              className="secondary ms-auto text-xs px-2 py-1 h-auto"
               onClick={() =>
                 apply({
                   ...filters,
@@ -376,34 +518,60 @@ export default function ViolationExplorer({
                 })
               }
             >
-              إزالة تصفية الشارت
+              إزالة التصفية
             </button>
           </div>
         )}
-        <p className="text-sm text-slate-500">
-          المؤشرات والجدول والخريطة والتصدير تتبع الفلاتر الحالية. العمر ليس مهلة إجرائية معتمدة.
-        </p>
+
+        {/* === Charts & Map === */}
         {mode === 'dashboard' && stats && (
-          <ManagerCharts statuses={stats.statuses} total={stats.total} closed={stats.closed} onStatus={(source_status) => apply({ ...filters, source_status })} />
+          <div className="surface p-6 rounded-2xl">
+            <ManagerCharts
+              statuses={stats.statuses}
+              total={stats.total}
+              closed={stats.closed}
+              onStatus={(source_status) => apply({ ...filters, source_status })}
+            />
+          </div>
         )}
-        {mode !== 'list' && <SpatialMap query={query} onSelect={details} />}
-        <section className="card surface min-w-0 overflow-hidden">
-          <div className="flex items-center gap-2 border-b border-slate-100 p-4">
-            <MapPin size={18} />
-            <h3 className="font-semibold">النتائج ({total.toLocaleString('ar-SA')})</h3>
+
+        {mode !== 'list' && (
+          <div className="surface rounded-2xl overflow-hidden border border-slate-200">
+            <SpatialMap query={query} onSelect={details} />
+          </div>
+        )}
+
+        {/* === Data Table === */}
+        <section className="surface rounded-2xl overflow-hidden">
+          <div className="flex items-center justify-between border-b border-slate-100 p-5 bg-slate-50/50">
+            <div className="flex items-center gap-2">
+              <FileText size={18} className="text-blue-600" />
+              <h3 className="font-bold text-slate-800">سجل التعديات</h3>
+              <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                {total.toLocaleString('ar-SA')}
+              </span>
+            </div>
             {busy && (
-              <span role="status" className="ms-auto text-sm text-teal-700">
+              <span
+                role="status"
+                className="flex items-center gap-2 text-sm text-blue-600 font-medium"
+              >
+                <span className="h-4 w-4 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
                 جارٍ التحديث…
               </span>
             )}
           </div>
-          <div className="max-w-full overflow-x-auto">
-            <table className="table table-vcenter w-full min-w-[760px] text-start text-sm">
-              <thead className="bg-slate-50 text-slate-500">
+
+          <div className="overflow-x-auto">
+            <table className="report-table w-full text-start text-sm">
+              <thead>
                 {table.getHeaderGroups().map((h) => (
                   <tr key={h.id}>
                     {h.headers.map((c) => (
-                      <th key={c.id} className="p-4 text-start font-medium">
+                      <th
+                        key={c.id}
+                        className="font-semibold text-slate-600 uppercase tracking-wider text-xs"
+                      >
                         {flexRender(c.column.columnDef.header, c.getContext())}
                       </th>
                     ))}
@@ -411,10 +579,13 @@ export default function ViolationExplorer({
                 ))}
               </thead>
               <tbody>
-                {table.getRowModel().rows.map((r) => (
-                  <tr key={r.id} className="border-t border-slate-100 hover:bg-slate-50">
+                {table.getRowModel().rows.map((r, index) => (
+                  <tr
+                    key={r.id}
+                    className={`group transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'} hover:bg-blue-50/60`}
+                  >
                     {r.getVisibleCells().map((c) => (
-                      <td key={c.id} className="max-w-64 px-4 py-4">
+                      <td key={c.id} className="px-5 py-4 align-middle">
                         {flexRender(c.column.columnDef.cell, c.getContext())}
                       </td>
                     ))}
@@ -423,31 +594,43 @@ export default function ViolationExplorer({
               </tbody>
             </table>
           </div>
+
           {!busy && !rows.length && (
-            <p className="p-8 text-center text-slate-500">لا توجد نتائج مطابقة للفلاتر.</p>
+            <div className="flex flex-col items-center justify-center py-16 text-slate-500">
+              <Search size={48} className="mb-4 text-slate-300" />
+              <p className="text-lg font-medium">لا توجد نتائج مطابقة للفلاتر المحددة</p>
+              <button className="secondary mt-4" onClick={() => apply(initial)}>
+                مسح الفلاتر
+              </button>
+            </div>
           )}
-          <div className="flex items-center justify-between gap-2 p-4">
-            <button
-              className="btn secondary"
-              disabled={page <= 1 || busy}
-              onClick={() => setPage((p) => p - 1)}
-            >
-              <ArrowRight size={18} />
-              السابق
-            </button>
-            <span className="text-sm">
-              {page} / {Math.max(1, Math.ceil(total / pageSize))}
-            </span>
-            <button
-              className="btn secondary"
-              disabled={page * pageSize >= total || busy}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              التالي
-              <ArrowLeft size={18} />
-            </button>
-          </div>
+
+          {rows.length > 0 && (
+            <div className="flex items-center justify-between gap-2 border-t border-slate-100 p-4 bg-slate-50/50">
+              <button
+                className="secondary flex items-center gap-2"
+                disabled={page <= 1 || busy}
+                onClick={() => setPage((p) => p - 1)}
+              >
+                <ArrowRight size={16} />
+                السابق
+              </button>
+              <span className="text-sm font-medium text-slate-600 bg-white px-3 py-1 rounded-lg border border-slate-200 shadow-sm">
+                صفحة {page} من {Math.max(1, Math.ceil(total / pageSize))}
+              </span>
+              <button
+                className="secondary flex items-center gap-2"
+                disabled={page * pageSize >= total || busy}
+                onClick={() => setPage((p) => p + 1)}
+              >
+                التالي
+                <ArrowLeft size={16} />
+              </button>
+            </div>
+          )}
         </section>
+
+        {/* === Details Sheet === */}
         <Sheet
           open={!!selected}
           onOpenChange={(open) => {
@@ -456,13 +639,18 @@ export default function ViolationExplorer({
           title={`تفاصيل البلاغ ${selected?.source_reference || ''}`}
         >
           {selected && (
-            <div className="space-y-5">
-              <p>{selected.description_raw || 'لا يوجد وصف'}</p>
-              <dl className="grid gap-4">
+            <div className="space-y-6">
+              <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
+                <p className="text-slate-700 leading-relaxed">
+                  {selected.description_raw || 'لا يوجد وصف متاح لهذا البلاغ.'}
+                </p>
+              </div>
+
+              <dl className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
                 {[
                   ['الحالة الأصلية', selected.source_status],
                   ['المقاول في المصدر', selected.reported_contractor_name],
-                  ['المشروع', selected.project_name],
+                  ['المشروع المرتبط', selected.project_name],
                   ['مقاول المشروع', selected.project_contractor_name],
                   ['مدير المشروع للمتابعة', selected.project_manager_name],
                   ['سبب التصنيف', selected.classification_reason],
@@ -473,22 +661,27 @@ export default function ViolationExplorer({
                       : 'يحتاج تحديد الجهة المسؤولة',
                   ],
                 ].map(([key, value]) => (
-                  <div key={key}>
-                    <dt className="text-sm text-slate-500">{key}</dt>
-                    <dd className="mt-1 font-medium">{value || 'غير محدد'}</dd>
+                  <div key={key} className="border-b border-slate-100 pb-3 last:border-0">
+                    <dt className="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-1">
+                      {key}
+                    </dt>
+                    <dd className="text-sm font-medium text-slate-800">{value || 'غير محدد'}</dd>
                   </div>
                 ))}
               </dl>
-              <TaskPanel
-                id={selected.id}
-                owner={selected.current_action_owner_id || null}
-                updatedAt={selected.updated_at}
-                isClosed={!!selected.is_closed}
-                onSaved={() => {
-                  void details(selected.id);
-                  setFilters({ ...filters });
-                }}
-              />
+
+              <div className="pt-4 border-t border-slate-200">
+                <TaskPanel
+                  id={selected.id}
+                  owner={selected.current_action_owner_id || null}
+                  updatedAt={selected.updated_at}
+                  isClosed={!!selected.is_closed}
+                  onSaved={() => {
+                    void details(selected.id);
+                    setFilters({ ...filters });
+                  }}
+                />
+              </div>
             </div>
           )}
         </Sheet>
