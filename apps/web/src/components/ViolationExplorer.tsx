@@ -3,7 +3,19 @@
 import { useEffect, useMemo, useState } from 'react';
 import dynamic from 'next/dynamic';
 import { Download, Search, ArrowRight, ArrowLeft } from 'lucide-react';
-import type { ManagerSummary, StatusCount } from '@/lib/domain/manager';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import type { StatusCount } from '@/lib/domain/manager';
 
 const SpatialMap = dynamic(() => import('./SpatialMap'), { ssr: false });
 
@@ -66,159 +78,171 @@ export default function ViolationExplorer({
       .catch(() => setBusy(false));
   }, [query, page]);
 
-  const cards = stats
+  const statsCards = stats
     ? [
-        { label: 'إجمالي البلاغات', value: stats.total, color: 'text-blue-600' },
-        { label: 'تمت المعالجة', value: stats.closed, color: 'text-emerald-600' },
+        { label: 'إجمالي البلاغات', value: stats.total, color: 'bg-blue-500' },
+        {
+          label: 'تحت معالجة المقاول',
+          value: stats.statuses.find((s) => s.status === 'تحت معالجة المقاول')?.count || 0,
+          color: 'bg-amber-500',
+        },
+        {
+          label: 'تحت معالجة الجهة',
+          value: stats.statuses.find((s) => s.status === 'تحت معالجة الجهة المتعدية')?.count || 0,
+          color: 'bg-purple-500',
+        },
+        { label: 'تمت المعالجة', value: stats.closed, color: 'bg-emerald-500' },
       ]
     : [];
 
   return (
     <div className="space-y-6">
       {/* العنوان */}
-      <div className="card-glass flex items-center justify-between">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">لوحة المتابعة</h2>
-          <p className="mt-1 text-sm text-slate-600">
+          <h2 className="text-2xl font-bold tracking-tight">لوحة المتابعة</h2>
+          <p className="text-sm text-muted-foreground">
             {stats?.last_batch
               ? `آخر تحديث: ${new Date(stats.last_batch.created_at).toLocaleString('ar-SA')}`
               : 'متابعة التعديات والمشاريع'}
           </p>
         </div>
-        <a
-          href={`/api/reports/export/excel?${query}`}
-          className="btn-secondary flex items-center gap-2"
-        >
-          <Download size={18} />
+        <Button variant="outline">
+          <Download className="ml-2 h-4 w-4" />
           تصدير
-        </a>
+        </Button>
       </div>
 
       {/* بطاقات الإحصائيات */}
       {mode === 'dashboard' && (
-        <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-          {cards.map(({ label, value, color }) => (
-            <div key={label} className="stat-card">
-              <p className="stat-label">{label}</p>
-              <p className={`stat-value ${color}`}>{value.toLocaleString('ar-SA')}</p>
-            </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+          {statsCards.map((card) => (
+            <Card key={card.label}>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">
+                  {card.label}
+                </CardTitle>
+                <div className={`h-2 w-2 rounded-full ${card.color}`} />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{card.value.toLocaleString('ar-SA')}</div>
+              </CardContent>
+            </Card>
           ))}
         </div>
       )}
 
       {/* نموذج الفلترة */}
-      <div className="card-glass">
-        <form
-          className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
-          onSubmit={(e) => {
-            e.preventDefault();
-            setPage(1);
-          }}
-        >
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">البحث</label>
-            <input
-              className="input-field"
-              value={filters.search}
-              onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              placeholder="رقم البلاغ أو المقاول"
-            />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">من تاريخ</label>
-            <input
+      <Card>
+        <CardContent className="p-6">
+          <form
+            className="grid gap-4 md:grid-cols-4"
+            onSubmit={(e) => {
+              e.preventDefault();
+              setPage(1);
+            }}
+          >
+            <div className="md:col-span-2">
+              <Input
+                placeholder="رقم البلاغ، المقاول، الحي..."
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              />
+            </div>
+            <Input
               type="date"
-              className="input-field"
               value={filters.date_from}
               onChange={(e) => setFilters({ ...filters, date_from: e.target.value })}
             />
-          </div>
-          <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700">إلى تاريخ</label>
-            <input
+            <Input
               type="date"
-              className="input-field"
               value={filters.date_to}
               onChange={(e) => setFilters({ ...filters, date_to: e.target.value })}
             />
-          </div>
-          <div className="flex items-end gap-2">
-            <button
-              type="submit"
-              className="btn-primary flex-1 flex items-center justify-center gap-2"
-            >
-              <Search size={18} />
-              بحث
-            </button>
-            <button type="button" onClick={() => setFilters(initial)} className="btn-secondary">
-              مسح
-            </button>
-          </div>
-        </form>
-      </div>
+            <div className="md:col-span-4 flex gap-2">
+              <Button type="submit">
+                <Search className="ml-2 h-4 w-4" />
+                بحث
+              </Button>
+              <Button type="button" variant="outline" onClick={() => setFilters(initial)}>
+                مسح
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
 
       {/* الخريطة */}
       {mode !== 'list' && (
-        <div className="map-container">
-          <SpatialMap query={query} onSelect={() => {}} />
-        </div>
+        <Card>
+          <CardContent className="p-0">
+            <SpatialMap query={query} onSelect={() => {}} />
+          </CardContent>
+        </Card>
       )}
 
       {/* الجدول */}
-      <div className="card-glass overflow-hidden">
-        <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold text-slate-800">
-            النتائج ({total.toLocaleString('ar-SA')})
-          </h3>
-          {busy && <span className="text-sm text-blue-600">جارٍ التحميل...</span>}
-        </div>
-        <div className="overflow-x-auto">
-          <table className="data-table">
-            <thead>
-              <tr>
-                <th>رقم البلاغ</th>
-                <th>الحي</th>
-                <th>المقاول</th>
-                <th>الحالة</th>
-                <th>العمر</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((row) => (
-                <tr key={row.id}>
-                  <td className="font-semibold text-blue-600">{row.source_reference}</td>
-                  <td>{row.district_raw || 'غير محدد'}</td>
-                  <td>{row.reported_contractor_name || 'غير محدد'}</td>
-                  <td>{row.source_status}</td>
-                  <td>{row.is_closed ? 'مغلق' : `${row.age_days || 0} يوم`}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {!busy && rows.length === 0 && (
-          <p className="py-8 text-center text-slate-500">لا توجد نتائج</p>
-        )}
-        <div className="mt-4 flex items-center justify-between">
-          <button
-            onClick={() => setPage((p) => p - 1)}
-            disabled={page <= 1}
-            className="btn-secondary flex items-center gap-2"
-          >
-            <ArrowRight size={16} />
-            السابق
-          </button>
-          <span className="text-sm text-slate-600">صفحة {page}</span>
-          <button
-            onClick={() => setPage((p) => p + 1)}
-            disabled={page * 25 >= total}
-            className="btn-secondary flex items-center gap-2"
-          >
-            التالي
-            <ArrowLeft size={16} />
-          </button>
-        </div>
-      </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>النتائج ({total.toLocaleString('ar-SA')})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {busy ? (
+            <div className="flex justify-center p-8">
+              <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+            </div>
+          ) : (
+            <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>رقم البلاغ</TableHead>
+                    <TableHead>الحي</TableHead>
+                    <TableHead>المقاول</TableHead>
+                    <TableHead>الحالة</TableHead>
+                    <TableHead>العمر</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium text-primary">
+                        {row.source_reference}
+                      </TableCell>
+                      <TableCell>{row.district_raw || 'غير محدد'}</TableCell>
+                      <TableCell>{row.reported_contractor_name || 'غير محدد'}</TableCell>
+                      <TableCell>
+                        <Badge variant={row.is_closed ? 'secondary' : 'default'}>
+                          {row.source_status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>{row.is_closed ? 'مغلق' : `${row.age_days || 0} يوم`}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {rows.length === 0 && (
+                <p className="py-8 text-center text-muted-foreground">لا توجد نتائج</p>
+              )}
+            </>
+          )}
+          <div className="mt-4 flex items-center justify-between">
+            <Button variant="outline" onClick={() => setPage((p) => p - 1)} disabled={page <= 1}>
+              <ArrowRight className="ml-2 h-4 w-4" />
+              السابق
+            </Button>
+            <span className="text-sm text-muted-foreground">صفحة {page}</span>
+            <Button
+              variant="outline"
+              onClick={() => setPage((p) => p + 1)}
+              disabled={page * 25 >= total}
+            >
+              التالي
+              <ArrowLeft className="mr-2 h-4 w-4" />
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
