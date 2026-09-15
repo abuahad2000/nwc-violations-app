@@ -12,8 +12,22 @@ const LoginSchema = z.object({
 
 export async function POST(req: NextRequest) {
   try {
-    if (!isSameOrigin(req))
+    // --- التعديل: السماح بنطاقات Vercel و Localhost لتجنب خطأ 403 ---
+    const origin = req.headers.get('origin');
+    const host = req.headers.get('host');
+
+    const isAllowed =
+      origin?.includes('localhost') ||
+      origin?.includes('.vercel.app') ||
+      host?.includes('.vercel.app') ||
+      isSameOrigin(req);
+
+    if (!isAllowed) {
+      console.warn('محاولة دخول محظورة من المصدر:', origin);
       return NextResponse.json({ message: 'مصدر الطلب غير مسموح' }, { status: 403 });
+    }
+    // ---------------------------------------------------------------
+
     const body = await req.json();
     const parsed = LoginSchema.safeParse(body);
 
@@ -27,10 +41,14 @@ export async function POST(req: NextRequest) {
     const { email, password } = parsed.data;
     const key = crypto.createHash('sha256').update(email.trim().toLowerCase()).digest('hex');
     const now = Date.now();
+
     await db.prepare('DELETE FROM login_attempts WHERE expires_at < ?').run(now);
     const attempt = await db.prepare('SELECT attempts FROM login_attempts WHERE key=?').get(key);
-    if (attempt && Number(attempt.attempts) >= 10)
-      return NextResponse.json({ message: 'محاولات كثيرة؛ حاول بعد15 دقيقة' }, { status: 429 });
+
+    if (attempt && Number(attempt.attempts) >= 10) {
+      return NextResponse.json({ message: 'محاولات كثيرة؛ حاول بعد 15 دقيقة' }, { status: 429 });
+    }
+
     await db
       .prepare(
         'INSERT INTO login_attempts VALUES (?,1,?) ON CONFLICT(key) DO UPDATE SET attempts=login_attempts.attempts+1',
@@ -72,10 +90,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // مسح محاولات الدخول الفاشلة بعد النجاح
     await db.prepare('DELETE FROM login_attempts WHERE key=?').run(key);
+
+    // إنشاء الجلسة
     await createSession(user.id);
 
-    // Audit log
+    // تسجيل حدث الدخول (Audit log)
     await db
       .prepare(
         `
@@ -103,7 +124,8 @@ export async function POST(req: NextRequest) {
         contractor_id: user.contractor_id,
       },
     });
-  } catch {
+  } catch (error) {
+    console.error('Login API Error:', error);
     return NextResponse.json(
       { status: 'error', message: 'حدث خطأ أثناء تسجيل الدخول' },
       { status: 500 },
