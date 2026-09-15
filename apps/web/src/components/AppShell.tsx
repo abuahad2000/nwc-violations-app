@@ -111,11 +111,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                   const isActive = pathname === item.url;
                   return (
                     <SidebarMenuItem key={item.url}>
-                      <SidebarMenuButton asChild isActive={isActive}>
-                        <Link href={item.url}>
-                          <item.icon className="h-4 w-4" />
-                          <span>{item.title}</span>
-                        </Link>
+                      <SidebarMenuButton
+                        render={<Link href={item.url} />}
+                        isActive={isActive}
+                      >
+                        <item.icon className="h-4 w-4" />
+                        <span>{item.title}</span>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );

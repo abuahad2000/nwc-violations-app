@@ -7,8 +7,25 @@ import { cn } from "cn"
 import { Button } from "@/components/ui/button"
 import { XIcon } from "lucide-react"
 
-function Sheet({ ...props }: SheetPrimitive.Root.Props) {
-  return <SheetPrimitive.Root data-slot="sheet" {...props} />
+interface SheetProps extends SheetPrimitive.Root.Props {
+  title?: string;
+  children?: React.ReactNode;
+}
+
+function Sheet({ title, children, open, onOpenChange, ...props }: SheetProps) {
+  if (title !== undefined) {
+    return (
+      <SheetPrimitive.Root open={open} onOpenChange={onOpenChange} data-slot="sheet" {...props}>
+        <SheetContent side="right" className="overflow-y-auto max-w-lg p-6">
+          <SheetHeader>
+            <SheetTitle className="text-xl font-bold">{title}</SheetTitle>
+          </SheetHeader>
+          <div className="mt-4">{children}</div>
+        </SheetContent>
+      </SheetPrimitive.Root>
+    );
+  }
+  return <SheetPrimitive.Root open={open} onOpenChange={onOpenChange} data-slot="sheet" {...props}>{children}</SheetPrimitive.Root>;
 }
 
 function SheetTrigger({ ...props }: SheetPrimitive.Trigger.Props) {
