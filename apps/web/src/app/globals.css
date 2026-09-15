@@ -240,3 +240,68 @@ body {
     border-radius: 0;
   }
 }
+/* === إصلاح الخريطة - جعلها أوضح === */
+.maplibregl-map {
+  filter: contrast(1.1) saturate(1.2);
+}
+
+.maplibregl-canvas {
+  background: #e8f4f8 !important;
+}
+
+/* === إصلاح الشريط الجانبي - إجبار الظهور === */
+.sidebar {
+  background: linear-gradient(180deg, #1e293b 0%, #0f172a 100%) !important;
+  color: white !important;
+  border-radius: 1rem !important;
+  padding: 1.5rem !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2) !important;
+  min-height: 500px !important;
+}
+
+.sidebar-link {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  padding: 0.875rem 1rem !important;
+  border-radius: 0.75rem !important;
+  color: #cbd5e1 !important;
+  text-decoration: none !important;
+  transition: all 0.2s !important;
+  margin-bottom: 0.5rem !important;
+  cursor: pointer !important;
+}
+
+.sidebar-link:hover {
+  background: rgba(255, 255, 255, 0.1) !important;
+  color: white !important;
+}
+
+.sidebar-link.active {
+  background: linear-gradient(135deg, #3b82f6, #2563eb) !important;
+  color: white !important;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3) !important;
+}
+
+/* إجبار الشريط الجانبي على الظهور في الشاشات الكبيرة */
+@media (min-width: 1024px) {
+  .app-navigation,
+  aside.w-64,
+  aside.w-72 {
+    display: block !important;
+  }
+}
+/* === إجبار الشريط الجانبي الرئيسي على الظهور === */
+@media (min-width: 1024px) {
+  aside.w-64,
+  aside.w-72,
+  .app-navigation {
+    display: block !important;
+    visibility: visible !important;
+  }
+}
+
+/* تحسين مظهر القائمة الجانبية الداخلية للخريطة */
+aside.max-h-\[550px\] {
+  border-right: 1px solid #e2e8f0;
+}
